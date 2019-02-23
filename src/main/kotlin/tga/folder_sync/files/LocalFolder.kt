@@ -12,6 +12,7 @@ class LocalFolder(val file: File) : Folder() {
     override val absolutePath:  String get() = file.absolutePath
     override val path:          String get() = file.path
     override val pathSeparator: String get() = System.getProperty("file.separator")
+    override val exists: Boolean get() = file.exists()
 
     init {
         if (!file.isDirectory) throw RuntimeException("'${file.name}' is not a folder!")

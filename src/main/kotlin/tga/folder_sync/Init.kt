@@ -19,6 +19,8 @@ fun init(args: Array<String>) {
     println("    source: '$source'")
     println("    destination: '$destination'")
 
+
+
     val srcFolder = FoldersFactory.create(source)
     val dstFolder = FoldersFactory.create(destination)
 
@@ -34,7 +36,19 @@ fun init(args: Array<String>) {
 
 
 fun printCommands(commands: TreeSyncCommands<Folder>, dstFolder: Folder) {
-    for (node in commands.toAdd) println("copy ${node.obj.absolutePath} ${dstFolder.absolutePath}${dstFolder.pathSeparator}${node.parent!!.obj.path}")
+    for (src in commands.toAdd) {
+        val folder =  src.parent!!.obj.path
+        val firstSeparator = folder.indexOf(src.obj.pathSeparator)
 
-    for (node in commands.toRemove) println("del ${node.obj.absolutePath}")
+        val dstPath = when (firstSeparator) {
+              -1 -> ""
+            else -> folder.substring(firstSeparator+1)
+        }
+
+        val dstAbsolutePath = "${dstFolder.absolutePath}${dstFolder.pathSeparator}$dstPath"
+
+        println("copy folder [${src.obj.absolutePath}] to folder [$dstAbsolutePath]")
+    }
+
+    for (node in commands.toRemove) println("del folder [${node.obj.absolutePath}] out from the destination side")
 }

@@ -11,6 +11,7 @@ abstract class Folder : Comparable<Folder> {
     abstract val absolutePath: String
     abstract val path: String
     abstract val pathSeparator: String
+    abstract val exists: Boolean
 
     /**
      * <p>The function builds and returns full folders tree which contains all sub-folders.</p>
