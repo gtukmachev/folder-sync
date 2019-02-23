@@ -1,7 +1,7 @@
 package tga.folder_sync
 
 
-import tga.folder_sync.files.Folder
+import tga.folder_sync.files.SFile
 import tga.folder_sync.files.FoldersFactory
 import tga.folder_sync.tree.TreeSyncCommands
 
@@ -35,7 +35,7 @@ fun init(args: Array<String>) {
 }
 
 
-fun printCommands(commands: TreeSyncCommands<Folder>, dstFolder: Folder) {
+fun printCommands(commands: TreeSyncCommands<SFile>, dstFolder: SFile) {
     for (src in commands.toAdd) {
         val folder =  src.parent!!.obj.path
         val firstSeparator = folder.indexOf(src.obj.pathSeparator)

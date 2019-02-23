@@ -7,11 +7,11 @@ import java.io.File
  */
 object FoldersFactory {
 
-    fun create(name: String): Folder {
+    fun create(name: String): SFile {
 
-        if (name.startsWith("yandex://")) return YandexFolder(name)
+        if (name.startsWith("yandex://")) return YandexSFile(name)
 
-        return LocalFolder(File(name))
+        return LocalSFile(File(name))
 
     }
 
