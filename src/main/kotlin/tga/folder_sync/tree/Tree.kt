@@ -3,7 +3,11 @@ package tga.folder_sync.tree
 /**
  * Created by grigory@clearscale.net on 2/21/2019.
  */
-data class Tree<T>(val obj: T, val children: MutableList<Tree<T>> = mutableListOf()){
+data class Tree<T : Comparable<T>>(
+    val obj: T,
+    val parent: Tree<T>?,
+    val children: MutableList<Tree<T>> = mutableListOf()
+){
 
     fun deepFirstTravers(visit: (Tree<T>) -> Unit) {
         visit(this)
@@ -20,31 +24,49 @@ data class Tree<T>(val obj: T, val children: MutableList<Tree<T>> = mutableListO
     }
 
 
-    fun findChanges(destinationTree: Tree<out T>): TreeSyncCommands<T> {
+    fun buildSyncCommands(destinationTree: Tree<T>): TreeSyncCommands<T> {
 
-        val toUpdate = mutableListOf<T>()
-        val toDelete = mutableListOf<T>()
+        val addCommands = mutableListOf<Tree<T>>()
+        val delCommands = mutableListOf<Tree<T>>()
 
-        fun checkSingleFolder(source: Tree<T>, destination: Tree<T>) {
+        fun <X> Iterator<X>.nextOrNull() = if (hasNext()) next() else null
+
+        fun checkSingleFolder(source: Tree<T>, destination: Tree<T>, prefix: String) {
 
             val srcIterator = source.children.iterator()
             val dstIterator = destination.children.iterator()
 
-            while (dstIterator.hasNext() || srcIterator.hasNext()) {
-                val srcNode = srcIterator.next()
-                val dst = dstIterator.next()
+            var src: Tree<T>? = null
+            var dst: Tree<T>? = null
 
+            fun nextSrc() {src = srcIterator.nextOrNull(); println("${prefix}src = " + src?.obj)}
+            fun nextDst() {dst = dstIterator.nextOrNull(); println("${prefix}dst = " + dst?.obj)}
+            fun addToDst()   { addCommands.add(src!!); println("$prefix+++ " + src?.obj); nextSrc() }
+            fun delFromDst() { delCommands.add(dst!!); println("$prefix--- " + dst?.obj); nextDst() }
 
+            nextSrc(); nextDst()
 
+            while (src != null || dst != null) {
+                when {
+                    ( src == null && dst != null ) -> delFromDst()
+                    ( src != null && dst == null ) -> addToDst()
+
+                    ( src!!.obj.compareTo(dst!!.obj) == 0 ) -> { checkSingleFolder(src!!, dst!!, prefix+"\t"); nextSrc(); nextDst(); }
+
+                    ( src!!.obj > dst!!.obj) -> delFromDst()
+                    ( src!!.obj < dst!!.obj) -> addToDst()
+                }
             }
 
         }
 
+        checkSingleFolder(this, destinationTree, "")
 
-
-        return TreeSyncCommands<T>(toAdd = toUpdate, toRemove = toDelete)
-
+        return TreeSyncCommands(toAdd = addCommands, toRemove = delCommands)
     }
 
 
+    override fun toString(): String {
+        return "Tree{ children.size = ${children.size}, obj = $obj }"
+    }
 }

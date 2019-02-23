@@ -1,7 +1,9 @@
 package tga.folder_sync
 
 
+import tga.folder_sync.files.Folder
 import tga.folder_sync.files.FoldersFactory
+import tga.folder_sync.tree.TreeSyncCommands
 
 /**
  * Created by grigory@clearscale.net on 2/21/2019.
@@ -23,9 +25,16 @@ fun init(args: Array<String>) {
     val srcFolderTree = srcFolder.buildTree()
     val dstFolderTree = dstFolder.buildTree()
 
-    val changes = srcFolderTree.findChanges(dstFolderTree)
+    val commands = srcFolderTree.buildSyncCommands(dstFolderTree)
 
 
-    println(changes)
+    printCommands(commands, dstFolder)
 
+}
+
+
+fun printCommands(commands: TreeSyncCommands<Folder>, dstFolder: Folder) {
+    for (node in commands.toAdd) println("copy ${node.obj.absolutePath} ${dstFolder.absolutePath}${dstFolder.pathSeparator}${node.parent!!.obj.path}")
+
+    for (node in commands.toRemove) println("del ${node.obj.absolutePath}")
 }

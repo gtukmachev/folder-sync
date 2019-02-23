@@ -5,9 +5,12 @@ import tga.folder_sync.tree.Tree
 /**
  * Created by grigory@clearscale.net on 2/21/2019.
  */
-interface Folder {
+abstract class Folder : Comparable<Folder> {
 
-    val name: String
+    abstract val name: String
+    abstract val absolutePath: String
+    abstract val path: String
+    abstract val pathSeparator: String
 
     /**
      * <p>The function builds and returns full folders tree which contains all sub-folders.</p>
@@ -16,6 +19,9 @@ interface Folder {
      *                "ordered" means - all sub-folders inside a parent folder will be ordered by alphabet
      *
      */
-    fun buildTree(ordered: Boolean = true): Tree<Folder>
+    abstract fun buildTree(ordered: Boolean = true): Tree<Folder>
 
+    override fun compareTo(other: Folder) = this.name.compareTo( other.name, ignoreCase = true )
+
+    override fun toString() = path
 }
