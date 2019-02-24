@@ -19,6 +19,11 @@ data class Tree<T : Comparable<T>>(
         for(node in children) node.deepFirstTravers(visit)
     }
 
+    fun <D> deepFirstTraversWithLevel(d: D, visit: (Tree<T>, d: D) -> D) {
+        val nextD = visit(this, d)
+        for(node in children) node.deepFirstTraversWithLevel(nextD, visit)
+    }
+
     /**
      * travers children only if the visit function return true
      */

@@ -1,8 +1,9 @@
 package tga.folder_sync
 
 
-import tga.folder_sync.files.SFile
 import tga.folder_sync.files.FoldersFactory
+import tga.folder_sync.files.SFile
+import tga.folder_sync.tree.Tree
 import tga.folder_sync.tree.TreeSyncCommands
 
 /**
@@ -24,16 +25,29 @@ fun init(args: Array<String>) {
     val srcFolder = FoldersFactory.create(source)
     val dstFolder = FoldersFactory.create(destination)
 
-    val srcFolderTree = srcFolder.buildTree()
-    val dstFolderTree = dstFolder.buildTree()
+    val srcTree = srcFolder.buildTree()
+    val dstTree = dstFolder.buildTree()
 
-    val commands = srcFolderTree.buildSyncCommands(dstFolderTree)
+
+    printTree("\nSource tree: ", srcTree)
+    printTree("\nDestination tree: ", dstTree)
+    println("")
+
+    val commands = srcTree.buildSyncCommands(dstTree)
 
 
     printCommands(commands, dstFolder)
 
 }
 
+fun printTree(title: String, tree: Tree<SFile>) {
+    println(title)
+    tree.deepFirstTraversWithLevel(" ") { node, prefix->
+        println("${prefix}${node.obj.name}")
+        "$prefix|   "
+    }
+
+}
 
 fun printCommands(commands: TreeSyncCommands<SFile>, dstFolder: SFile) {
     for (src in commands.toAdd) {

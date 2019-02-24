@@ -12,28 +12,26 @@ class LocalSFile(val file: File) : SFile() {
     override val absolutePath:  String get() = file.absolutePath
     override val path:          String get() = file.path
     override val pathSeparator: String get() = System.getProperty("file.separator")
-    override val exists: Boolean get() = file.exists()
-
+    override val exists:       Boolean get() = file.exists()
+    override val isDirectory:  Boolean get() = file.isDirectory
 
     init {
-        if (!file.exists()) throw FolderDoNotExistsException(file.path)
-        if (!file.isDirectory) throw NotAFolderException(file.path)
+        //if (!file.exists()) throw FolderDoNotExistsException(file.path)
+        //if (!file.isDirectory) throw NotAFolderException(file.path)
     }
-
-
 
     override fun buildTree(ordered: Boolean): Tree<SFile> {
         val root = Tree(this, null)
 
         fun addChildren(node: Tree<LocalSFile>) {
-            val subfolders = node.obj.file.listFiles{ f -> f.isDirectory }
+            val subfolders = node.obj.file.listFiles()
 
             if (ordered) subfolders.sort()
 
             subfolders.forEach { f ->
                 val subNode = Tree(LocalSFile(f), node)
                 node.children.add(subNode)
-                addChildren(subNode)
+                if (f.isDirectory) addChildren(subNode)
             }
         }
 
@@ -42,13 +40,5 @@ class LocalSFile(val file: File) : SFile() {
         return root as Tree<SFile>
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is LocalSFile) return false
-
-        if (file != other.file) return false
-
-        return true
-    }
 
 }
