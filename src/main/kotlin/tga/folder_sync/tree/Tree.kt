@@ -41,7 +41,9 @@ data class Tree<T : Comparable<T>>(
 
         fun <X> Iterator<X>.nextOrNull() = if (hasNext()) next() else null
 
-        fun checkSingleFolder(source: Tree<T>, destination: Tree<T>, prefix: String) {
+        fun scanNode(source: Tree<T>, destination: Tree<T>, prefix: String) {
+
+            if (source.children.isEmpty() && destination.children.isEmpty()) return
 
             val srcIterator = source.children.iterator()
             val dstIterator = destination.children.iterator()
@@ -51,8 +53,21 @@ data class Tree<T : Comparable<T>>(
 
             fun nextSrc() {src = srcIterator.nextOrNull(); logger.trace("${prefix}src = " + src?.obj)}
             fun nextDst() {dst = dstIterator.nextOrNull(); logger.trace("${prefix}dst = " + dst?.obj)}
-            fun addToDst()   { addCommands.add(src!!); logger.trace("$prefix+++ " + src?.obj); nextSrc() }
-            fun delFromDst() { delCommands.add(dst!!); logger.trace("$prefix--- " + dst?.obj); nextDst() }
+
+            fun addToDst() {
+                src!!.deepFirstTraversWithLevel(prefix){ srcNode, subPrefix ->
+                    addCommands.add(srcNode)
+                    logger.trace("$subPrefix add " + srcNode.obj)
+                    "$subPrefix    "
+                }
+                nextSrc()
+            }
+
+            fun delFromDst() {
+                delCommands.add(dst!!)
+                logger.trace("$prefix del " + dst!!.obj)
+                nextDst()
+            }
 
             nextSrc(); nextDst()
 
@@ -61,16 +76,18 @@ data class Tree<T : Comparable<T>>(
                     ( src == null && dst != null ) -> delFromDst()
                     ( src != null && dst == null ) -> addToDst()
 
-                    ( src!!.obj.compareTo(dst!!.obj) == 0 ) -> { checkSingleFolder(src!!, dst!!, prefix+"\t"); nextSrc(); nextDst(); }
-
                     ( src!!.obj > dst!!.obj) -> delFromDst()
                     ( src!!.obj < dst!!.obj) -> addToDst()
+
+                    ( src!!.obj.compareTo(dst!!.obj) == 0 ) -> {
+                        scanNode(src!!, dst!!, prefix+"\t"); nextSrc(); nextDst()
+                    }
                 }
             }
 
         }
 
-        checkSingleFolder(this, destinationTree, "")
+        scanNode(this, destinationTree, "")
 
         return TreeSyncCommands(toAdd = addCommands, toRemove = delCommands)
     }
