@@ -15,7 +15,8 @@ import java.util.*
  * Created by grigory@clearscale.net on 2/21/2019.
  */
 private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.init")
-private val outDir: String = System.getProperty("outDir") + SimpleDateFormat("yyyy-MM-dd").format(Date())
+private val now = Date()
+private val outDir: String = System.getProperty("outDir") + SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(now)
 
 fun init(args: Array<String>) {
     if (args.size < 3) throw RuntimeException("not enough parameters!")
@@ -73,6 +74,11 @@ private fun printCommands(commands: TreeSyncCommands<SFile>, srcFolder: SFile, d
     }
 
     File("$outDir/plan.txt").printWriter().use { out ->
+        out.println("A sync-session plan file")
+        out.println(" - session planned at: ${SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z").format(now)}")
+        out.println(" -      source folder: '${srcFolder.absolutePath}'")
+        out.println(" - destination folder: '${dstFolder.absolutePath}'\n")
+
         for (src in commands.toAdd) {
             val srcFile = src.obj
             val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }"
