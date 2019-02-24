@@ -42,7 +42,7 @@ fun init(args: Array<String>) {
 
 
     if (logger.isDebugEnabled) {
-        printCommands(commands, dstFolder)
+        printCommands(commands, srcFolder, dstFolder)
     }
 
 }
@@ -56,20 +56,38 @@ fun printTree(title: String, tree: Tree<SFile>) {
 
 }
 
-fun printCommands(commands: TreeSyncCommands<SFile>, dstFolder: SFile) {
-    for (src in commands.toAdd) {
-        val folder =  src.parent!!.obj.path
-        val firstSeparator = folder.indexOf(src.obj.pathSeparator)
+fun printCommands(commands: TreeSyncCommands<SFile>, srcFolder: SFile, dstFolder: SFile) {
 
-        val dstPath = when (firstSeparator) {
-              -1 -> ""
-            else -> folder.substring(firstSeparator+1)
-        }
-
-        val dstAbsolutePath = "${dstFolder.absolutePath}${dstFolder.pathSeparator}$dstPath"
-
-        println("copy folder [${src.obj.absolutePath}] to folder [$dstAbsolutePath]")
+    fun fileOrFolder(item: SFile) = when (item.isDirectory) {
+        true  -> "<folder>"
+        false -> "< file >"
     }
 
-    for (node in commands.toRemove) println("del folder [${node.obj.absolutePath}] out from the destination side")
+
+
+    for (src in commands.toAdd) {
+        val srcFile = src.obj
+
+        if (srcFile.isDirectory) {
+            ////// ----- create a folder -----
+            val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }"
+
+            println("  mk <folder> [$dstFileName]")
+
+        } else {
+            ////// ----- copy a file -----
+            val srcFileName = srcFile.absolutePath
+            val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }"
+
+            println("copy < file > [$srcFileName] [$dstFileName]")
+
+        }
+    }
+
+    for (dstNode in commands.toRemove) {
+        val dstFile = dstNode.obj
+        val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${dstFile.relativeTo(dstFolder) }"
+
+        println(" del ${fileOrFolder(dstFile)} [$dstFileName]")
+    }
 }

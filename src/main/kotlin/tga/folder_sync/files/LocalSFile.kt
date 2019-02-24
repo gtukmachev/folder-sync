@@ -15,9 +15,11 @@ class LocalSFile(val file: File) : SFile() {
     override val exists:       Boolean get() = file.exists()
     override val isDirectory:  Boolean get() = file.isDirectory
 
-    init {
-        //if (!file.exists()) throw FolderDoNotExistsException(file.path)
-        //if (!file.isDirectory) throw NotAFolderException(file.path)
+
+    override fun relativeTo(base: SFile): String {
+        val baseFile = File(base.path)
+        val rel = this.file.relativeTo( baseFile )
+        return rel.path
     }
 
     override fun buildTree(ordered: Boolean): Tree<SFile> {

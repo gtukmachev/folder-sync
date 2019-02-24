@@ -8,6 +8,7 @@ import tga.folder_sync.tree.Tree
 class YandexSFile(override val name: String) : SFile() {
 
     override fun buildTree(ordered: Boolean): Tree<SFile> = TODO("not implemented")
+    override fun relativeTo(base: SFile): String = TODO("not implemented")
 
     override val absolutePath:  String get() = TODO("not implemented")
     override val path:          String get() = TODO("not implemented")
