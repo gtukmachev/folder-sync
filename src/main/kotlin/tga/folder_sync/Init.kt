@@ -1,6 +1,8 @@
 package tga.folder_sync
 
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import tga.folder_sync.files.FoldersFactory
 import tga.folder_sync.files.SFile
 import tga.folder_sync.tree.Tree
@@ -9,6 +11,8 @@ import tga.folder_sync.tree.TreeSyncCommands
 /**
  * Created by grigory@clearscale.net on 2/21/2019.
  */
+private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.init")
+
 
 fun init(args: Array<String>) {
     if (args.size < 3) throw RuntimeException("not enough parameters!")
@@ -21,7 +25,6 @@ fun init(args: Array<String>) {
     println("    destination: '$destination'")
 
 
-
     val srcFolder = FoldersFactory.create(source)
     val dstFolder = FoldersFactory.create(destination)
 
@@ -29,14 +32,18 @@ fun init(args: Array<String>) {
     val dstTree = dstFolder.buildTree()
 
 
-    printTree("\nSource tree: ", srcTree)
-    printTree("\nDestination tree: ", dstTree)
-    println("")
+    if (logger.isDebugEnabled) {
+        printTree("\nSource tree: ", srcTree)
+        printTree("\nDestination tree: ", dstTree)
+        println("")
+    }
 
     val commands = srcTree.buildSyncCommands(dstTree)
 
 
-    printCommands(commands, dstFolder)
+    if (logger.isDebugEnabled) {
+        printCommands(commands, dstFolder)
+    }
 
 }
 
