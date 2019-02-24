@@ -23,7 +23,11 @@ abstract class SFile : Comparable<SFile> {
      */
     abstract fun buildTree(ordered: Boolean = true): Tree<SFile>
 
-    override fun compareTo(other: SFile) = this.name.compareTo( other.name, ignoreCase = true )
+    override fun compareTo(other: SFile) = when {
+         this.isDirectory && !other.isDirectory ->  1
+        !this.isDirectory &&  other.isDirectory -> -1
+         else -> this.name.compareTo( other.name, ignoreCase = true )
+    }
 
     override fun toString() = path
 }
