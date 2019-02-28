@@ -16,7 +16,7 @@ import java.util.*
  */
 private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.init")
 private val now = Date()
-private val outDir: String = System.getProperty("outDir") + SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(now)
+private val outDir: String = System.getProperty("outDir") + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(now)
 
 fun init(args: Array<String>) {
     if (args.size < 3) throw RuntimeException("not enough parameters!")

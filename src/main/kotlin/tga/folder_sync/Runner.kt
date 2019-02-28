@@ -7,6 +7,7 @@ fun main(args: Array<String>) {
 
         when (args[0]) {
             "init" -> init(args)
+            "sync" -> sync(args)
         }
 
     } catch (e: Exception) {
