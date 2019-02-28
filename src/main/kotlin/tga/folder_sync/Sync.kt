@@ -17,7 +17,7 @@ fun sync(args: Array<String>) {
     val sessionArg: String? = if (args.size > 1) args[1] else null
     val sessionFolder = getSession( sessionArg ) ?: throw SessionFolderNotFound()
 
-    println("Session folder detected: " + sessionFolder.absolutePath)
+    logger.info("Session folder detected: {}", sessionFolder.absolutePath)
 
 
 }
