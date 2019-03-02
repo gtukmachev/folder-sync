@@ -2,7 +2,10 @@ package tga.folder_sync
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import tga.folder_sync.sync.MasterActor
+import tga.folder_sync.sync.SyncCmd
 import java.io.File
+import java.lang.System.exit
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -19,8 +22,46 @@ fun sync(args: Array<String>) {
 
     logger.info("Session folder detected: {}", sessionFolder.absolutePath)
 
+    val planFile = File(sessionFolder.absolutePath + "/plan.txt")
+
+    planFile.readLines()
+
+    planFile.useLines { stringSequence ->
+        var lineNumber = 0
+
+        val planActor = MasterActor( stringSequence .map{
+            SyncCmd.makeCommand(it, ++lineNumber)
+        })
+
+        planActor
+            .performAsync()
+            .handleAsync { result, error ->
+                quit(result, error)
+            }
+
+        logger.info("The synchronization process started")
+        //todo: add initial state report here
+        logger.info("Type Q or X and press <Enter> to stop execution")
+         
+        val exitCommands = setOf("Q", "q", "X", "x")
+        while ( !exitCommands.contains(readLine()) ) {  }
+
+        logger.warn("Execution was interrupted by a user.")
+        planActor.stop()
+
+    }
 
 }
+
+fun quit(result: Void?, error: Throwable?){
+    if (error != null) {
+        logger.error("The program finished wit the error: {}", error)
+        exit(-1)
+    }
+
+    exit(0)
+}
+
 
 private fun getSession(sessionArg: String?): File? {
 
