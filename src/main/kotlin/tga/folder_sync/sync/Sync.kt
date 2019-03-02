@@ -1,9 +1,7 @@
-package tga.folder_sync
+package tga.folder_sync.sync
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import tga.folder_sync.sync.MasterActor
-import tga.folder_sync.sync.SyncCmd
 import java.io.File
 import java.lang.System.exit
 import java.text.SimpleDateFormat
@@ -13,12 +11,13 @@ import java.util.*
  * Created by grigory@clearscale.net on 2/25/2019.
  */
 
-private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.sync")
+private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.sync.sync")
 private val now = Date()
 
 fun sync(args: Array<String>) {
     val sessionArg: String? = if (args.size > 1) args[1] else null
-    val sessionFolder = getSession( sessionArg ) ?: throw SessionFolderNotFound()
+    val sessionFolder = getSession(sessionArg)
+        ?: throw SessionFolderNotFound()
 
     logger.info("Session folder detected: {}", sessionFolder.absolutePath)
 
@@ -29,9 +28,10 @@ fun sync(args: Array<String>) {
     planFile.useLines { stringSequence ->
         var lineNumber = 0
 
-        val planActor = MasterActor( stringSequence .map{
-            SyncCmd.makeCommand(it, ++lineNumber)
-        })
+        val planActor = MasterActor( stringSequence
+            .map{ SyncCmd.makeCommand(it, ++lineNumber) }
+            .filter { it !is SkipCmd }
+        )
 
         planActor
             .performAsync()
@@ -73,7 +73,7 @@ private fun getSession(sessionArg: String?): File? {
         return folder
     }
 
-    val sessionsFolder = System.getProperty("outDir", ".")
+    val sessionsFolder = System.getProperty("outDir", "")
     val folderNamePattern = SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss")
 
     val subFolders = File(sessionsFolder).listFiles{ f -> f.isDirectory

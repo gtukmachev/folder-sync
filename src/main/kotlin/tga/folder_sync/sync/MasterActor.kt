@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.random.Random
 
 /**
  * Created by grigory@clearscale.net on 2/25/2019.
@@ -16,10 +17,10 @@ class MasterActor(
 ) {
     private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
 
-    val PARALLEL_COPY_FILES = 2
+    private val PARALLEL_COPY_FILES = 2
 
-    val cmdExecutor = Executors.newFixedThreadPool(PARALLEL_COPY_FILES)
-    val observersExecutor = Executors.newWorkStealingPool (PARALLEL_COPY_FILES * 2)
+    private val cmdExecutor = Executors.newFixedThreadPool(PARALLEL_COPY_FILES)
+    private val observersExecutor = Executors.newFixedThreadPool(PARALLEL_COPY_FILES * 2)
 
 
     private val stopped = AtomicBoolean(false)
@@ -29,10 +30,7 @@ class MasterActor(
 
     fun performAsync(): CompletableFuture<Void> {
 
-        synchronized(this) {
-            if ( wasPerformedOnce.get() ) throw MasterActorCanBePerformedOnlyOnce()
-            wasPerformedOnce.set(true)
-        }
+        if (!wasPerformedOnce.compareAndSet(false, true)) throw MasterActorCanBePerformedOnlyOnce()
 
         return CompletableFuture.runAsync {
             handlingCommands()
@@ -51,33 +49,13 @@ class MasterActor(
         }
     }
 
-    private fun exec(cmd: SyncCmd) {
+    private fun exec(cmd: SyncCmd): SyncCmd {
         logger.trace("exec({})",cmd)
-        Thread.sleep(1000)
-
-/*
-        val cmdTask = completableFutureViaSupplyAsync(cmdExecutor){
-            var err: Throwable? = null
-
-            try {
-                cmd.performCommand()
-            } catch (e: Throwable) {
-                err = e
-            }
-
-            if (err == null) {
-                //todo: write success log
-            } else {
-                //todo: write error log
-            }
-
-        }
-*/
-
-
+        Thread.sleep(Random.nextLong(1000))
+        return cmd.perform()
     }
 
-    private fun report(cmd: Unit, err: Throwable?) {
+    private fun report(cmd: SyncCmd, err: Throwable?) {
         logger.trace("report({}, {})", cmd, err)
     }
 
@@ -85,9 +63,9 @@ class MasterActor(
         logger.info("Waiting for current tasks finishing...")
 
         cmdExecutor.shutdown()
-        observersExecutor.shutdown()
-
         val doneCmdExecutor = cmdExecutor.awaitTermination(15, TimeUnit.SECONDS)
+
+        observersExecutor.shutdown()
         val doneObserversExecutor = observersExecutor.awaitTermination(5, TimeUnit.SECONDS)
 
         if (!doneCmdExecutor || !doneObserversExecutor) {

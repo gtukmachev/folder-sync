@@ -13,4 +13,4 @@ fun <T> completableFutureViaSupplyAsync(executor: Executor, supplier: () -> T): 
     CompletableFuture.supplyAsync<T>(Supplier<T>{ supplier.invoke() }, executor)
 
 fun <T, U> CompletableFuture<T>.handleAsync(executor: Executor, biFunction: (T, Throwable?) -> U): CompletableFuture<U> =
-    this.handleAsync(BiFunction<T, Throwable?, U>{ t, u -> biFunction.invoke(t, u) },executor)
+    this.handleAsync(BiFunction<T, Throwable?, U>{ t, u -> biFunction.invoke(t, u) }, executor)
