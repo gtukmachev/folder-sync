@@ -53,9 +53,9 @@ fun sync(args: Array<String>) {
 
 }
 
-fun quit(result: Void?, error: Throwable?){
+fun quit(result: Unit, error: Throwable?){
     if (error != null) {
-        logger.error("The program finished wit the error: {}", error)
+        logger.error("The program finished with the error: {}", error)
         exit(-1)
     }
 
