@@ -1,4 +1,4 @@
-package tga.folder_sync
+package tga.folder_sync.init
 
 
 import org.slf4j.Logger
@@ -14,7 +14,7 @@ import java.util.*
 /**
  * Created by grigory@clearscale.net on 2/21/2019.
  */
-private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.init")
+private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.init.init")
 private val now = Date()
 private val outDir: String = System.getProperty("outDir") + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(now)
 
