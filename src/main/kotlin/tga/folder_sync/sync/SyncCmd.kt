@@ -34,7 +34,7 @@ data class MkDirCmd(override val lineNumber: Int, val dstDirName: String) : Sync
 
 data class DelCmd(override val lineNumber: Int, val dstFileOrFolderName: String) : SyncCmd {
     override fun perform(): DelCmd {
-        return this
+        throw RuntimeException("test")
     }
 }
 

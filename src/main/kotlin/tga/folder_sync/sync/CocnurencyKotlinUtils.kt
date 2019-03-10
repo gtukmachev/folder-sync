@@ -18,8 +18,8 @@ import kotlin.concurrent.withLock
 fun <T> completableFutureViaSupplyAsync(executor: Executor, supplier: () -> T): CompletableFuture<T> =
     CompletableFuture.supplyAsync<T>(Supplier<T>{ supplier.invoke() }, executor)
 
-fun <T, U> CompletableFuture<T>.handleAsync(executor: Executor, biFunction: (T, Throwable?) -> U): CompletableFuture<U> =
-    this.handleAsync(BiFunction<T, Throwable?, U>{ t, u -> biFunction.invoke(t, u) }, executor)
+fun <T, U> CompletableFuture<T>.handleAsync(executor: Executor, biFunction: (T?, Throwable?) -> U): CompletableFuture<U> =
+    this.handleAsync(BiFunction<T?, Throwable?, U>{ t, u -> biFunction.invoke(t, u) }, executor)
 
 
 abstract class Actor<T> {

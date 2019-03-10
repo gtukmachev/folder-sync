@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 /**
  * Created by grigory@clearscale.net on 2/25/2019.
@@ -30,7 +31,7 @@ class MasterActor(private val commandsSource: Sequence<SyncCmd>) : Actor<Unit>()
         while ( cmds.hasNext() && !stopped.get()) {
             val currentCmd = cmds.next()
             tasksCounterLatch.increment()
-            completableFutureViaSupplyAsync(cmdExecutor){ currentCmd.perform() }  // exec command
+            completableFutureViaSupplyAsync(cmdExecutor){ exec(currentCmd) }  // exec command
                             .handleAsync(reportExecutor){ cmd, err -> report(cmd, err) } // report about the execution
         }
     }
@@ -53,7 +54,14 @@ class MasterActor(private val commandsSource: Sequence<SyncCmd>) : Actor<Unit>()
         }
     }
 
-    private fun report(cmd: SyncCmd, err: Throwable?) {
+
+
+    private fun exec(cmd: SyncCmd): SyncCmd {
+        Thread.sleep(Random.nextLong(1000))
+        return cmd.perform()
+    }
+
+    private fun report(cmd: SyncCmd?, err: Throwable?) {
         logger.trace("report({}, {})", cmd, err)
         tasksCounterLatch.countDown()
     }
