@@ -20,8 +20,11 @@ class MasterActor(private val commandsSource: Sequence<SyncCmd>) : Actor<Unit>()
 
     private val tasksCounterLatch = CounterLatch(0)
 
+    private val reportActor = ReportActor()
 
     override fun perform() {
+        reportExecutor.submit{ reportActor.perform() }
+
         handlingCommands()
         shutdownThreads()
     }
@@ -63,6 +66,7 @@ class MasterActor(private val commandsSource: Sequence<SyncCmd>) : Actor<Unit>()
 
     private fun report(cmd: SyncCmd?, err: Throwable?) {
         logger.trace("report({}, {})", cmd, err)
+        reportActor.push(cmd to err)
         tasksCounterLatch.countDown()
     }
 
