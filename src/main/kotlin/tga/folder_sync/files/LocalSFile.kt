@@ -13,7 +13,8 @@ class LocalSFile(val file: File) : SFile() {
     override val path:          String get() = file.path
     override val pathSeparator: String get() = System.getProperty("file.separator")
     override val exists:       Boolean get() = file.exists()
-    override val isDirectory:  Boolean get() = file.isDirectory
+    override val isDirectory:  Boolean by lazy { file.isDirectory }
+    override val size:            Long by lazy { if (isDirectory) 1 else file.length() }
 
 
     override fun relativeTo(base: SFile): String {
@@ -24,8 +25,16 @@ class LocalSFile(val file: File) : SFile() {
 
     override fun buildTree(ordered: Boolean): Tree<SFile> {
         val root = Tree(this, null)
+        var timer = System.currentTimeMillis()
+        var counter = 0
 
         fun addChildren(node: Tree<LocalSFile>) {
+            counter++
+            if (counter % 1000 == 0 || (System.currentTimeMillis() - timer) > 1000) {
+                println("    $counter files scanned")
+                timer = System.currentTimeMillis()
+            }
+
             val subfolders = node.obj.file.listFiles()
 
             if (ordered) subfolders.sort()
@@ -38,6 +47,7 @@ class LocalSFile(val file: File) : SFile() {
         }
 
         addChildren(root)
+        println("    $counter files scanned")
 
         return root as Tree<SFile>
     }

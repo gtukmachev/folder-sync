@@ -13,7 +13,7 @@ class YandexSFile(override val name: String) : SFile() {
     override val absolutePath:  String get() = TODO("not implemented")
     override val path:          String get() = TODO("not implemented")
     override val pathSeparator: String get() = "/"
-    override val exists:      Boolean get() = TODO("not implemented")
-    override val isDirectory: Boolean get() = TODO("not implemented")
-
+    override val exists:       Boolean get() = TODO("not implemented")
+    override val isDirectory:  Boolean get() = TODO("not implemented")
+    override val size:            Long get() = TODO("not implemented")
 }

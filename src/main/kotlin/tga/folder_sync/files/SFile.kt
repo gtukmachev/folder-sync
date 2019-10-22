@@ -13,6 +13,7 @@ abstract class SFile : Comparable<SFile> {
     abstract val pathSeparator: String
     abstract val exists: Boolean
     abstract val isDirectory: Boolean
+    abstract val size: Long
 
     /**
      * <p>The function builds and returns full folders tree which contains all sub-folders.</p>

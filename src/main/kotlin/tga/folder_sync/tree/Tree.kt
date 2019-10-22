@@ -55,11 +55,12 @@ data class Tree<T : Comparable<T>>(
             fun nextDst() {dst = dstIterator.nextOrNull(); logger.trace("${prefix}dst = " + dst?.obj)}
 
             fun addToDst() {
-                src!!.deepFirstTraversWithLevel(prefix){ srcNode, subPrefix ->
-                    addCommands.add(srcNode)
-                    logger.trace("$subPrefix add " + srcNode.obj)
-                    "$subPrefix    "
-                }
+                addCommands.add(src!!)
+//                src!!.deepFirstTraversWithLevel(prefix){ srcNode, subPrefix ->
+//                    addCommands.add(srcNode)
+//                    logger.trace("$subPrefix add " + srcNode.obj)
+//                    "$subPrefix    "
+//                }
                 nextSrc()
             }
 
@@ -72,15 +73,14 @@ data class Tree<T : Comparable<T>>(
             nextSrc(); nextDst()
 
             while (src != null || dst != null) {
-                when {
-                    ( src == null && dst != null ) -> delFromDst()
-                    ( src != null && dst == null ) -> addToDst()
-
-                    ( src!!.obj > dst!!.obj) -> delFromDst()
-                    ( src!!.obj < dst!!.obj) -> addToDst()
-
-                    ( src!!.obj.compareTo(dst!!.obj) == 0 ) -> {
-                        scanNode(src!!, dst!!, prefix+"\t"); nextSrc(); nextDst()
+                if      ( src == null && dst != null ) delFromDst()
+                else if ( src != null && dst == null ) addToDst()
+                else {
+                    val cmp = src!!.obj.compareTo(dst!!.obj)
+                    when {
+                        (cmp >  0) -> delFromDst()
+                        (cmp <  0) -> addToDst()
+                        (cmp == 0) -> { scanNode(src!!, dst!!, prefix+"\t"); nextSrc(); nextDst() }
                     }
                 }
             }
