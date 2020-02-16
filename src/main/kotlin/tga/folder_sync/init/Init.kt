@@ -46,7 +46,7 @@ fun init(args: Array<String>) {
     }
 
     println("\nFiles comparing...")
-    val commands = srcTree.buildSyncCommands(dstTree)
+    val commands = srcTree.buildTreeSyncCommands(dstTree)
 
 
     println("\nplan printing...")

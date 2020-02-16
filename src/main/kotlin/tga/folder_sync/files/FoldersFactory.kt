@@ -1,5 +1,6 @@
 package tga.folder_sync.files
 
+import com.yandex.disk.rest.Credentials
 import java.io.File
 
 /**
@@ -7,12 +8,9 @@ import java.io.File
  */
 object FoldersFactory {
 
-    fun create(name: String): SFile {
-
-        if (name.startsWith("yandex://")) return YandexSFile(name)
-
-        return LocalSFile(File(name))
-
+    fun create(name: String): SFile = when{
+        (name.startsWith("yandex://")) -> YandexSFile(name.substring("yandex://".length), Credentials(System.getProperty("user"), System.getProperty("token")))
+                                  else -> LocalSFile(File(name))
     }
 
 }

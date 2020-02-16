@@ -34,7 +34,7 @@ data class Tree<T : Comparable<T>>(
     }
 
 
-    fun buildSyncCommands(destinationTree: Tree<T>): TreeSyncCommands<T> {
+    fun buildTreeSyncCommands(destinationTree: Tree<T>): TreeSyncCommands<T> {
 
         val addCommands = mutableListOf<Tree<T>>()
         val delCommands = mutableListOf<Tree<T>>()
