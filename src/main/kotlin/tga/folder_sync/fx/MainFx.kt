@@ -1,11 +1,14 @@
+// https://docs.oracle.com/javafx/2/get_started/css.htm#BABBGJBI
 package tga.folder_sync.fx
 
 import javafx.application.Application
 import javafx.application.Application.launch
 import javafx.event.ActionEvent
 import javafx.event.EventHandler
+import javafx.fxml.FXMLLoader
 import javafx.geometry.Insets
 import javafx.geometry.Pos
+import javafx.scene.Parent
 import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.Label
@@ -18,7 +21,7 @@ import javafx.stage.Stage
 
 
 fun main(args: Array<String>) {
-    launch(MainFx::class.java, *args)
+    launch(MainFxFxml::class.java, *args)
 }
 
 class MainFx : Application() {
@@ -55,6 +58,19 @@ class MainFx : Application() {
             val css = clz.getResource("Login.css")
             scene.stylesheets.add( css.toExternalForm() )
         }.show()
+
+    }
+}
+
+class MainFxFxml : Application() {
+
+    override fun start(primaryStage: Stage) {
+        val root = FXMLLoader.load<Parent>(javaClass.getResource("MainFx.fxml"))
+        val scene = Scene(root, 300.0, 275.0)
+
+        primaryStage.setTitle("FXML Welcome")
+        primaryStage.setScene(scene)
+        primaryStage.show()
 
     }
 }
