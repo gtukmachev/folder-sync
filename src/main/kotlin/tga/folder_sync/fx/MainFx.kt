@@ -21,7 +21,18 @@ import javafx.stage.Stage
 
 
 fun main(args: Array<String>) {
-    launch(MainFxFxml::class.java, *args)
+    launch(MainSynchronizer::class.java, *args)
+}
+
+class MainSynchronizer : Application() {
+
+    override fun start(primaryStage: Stage) {
+        val root = FXMLLoader.load<Parent>(javaClass.getResource("scenes/process/Process.fxml"))
+        val scene = Scene(root, 600.0, 400.0)
+        primaryStage.title = "Folders Synchronizer"
+        primaryStage.scene = scene
+        primaryStage.show()
+    }
 }
 
 class MainFx : Application() {
