@@ -33,6 +33,20 @@ data class Tree<T : Comparable<T>>(
         }
     }
 
+    fun <D> fold(visitRoot: (Tree<T>) -> D, visitChildren: (parentResult: D, child: Tree<T>) -> D) {
+
+        val rootResult = visitRoot(this)
+
+        this.foldChildren(rootResult, visitChildren)
+    }
+
+    private fun <D> foldChildren(parentResult: D, visitChildren: (parentResult: D, child: Tree<T>) -> D) {
+        children.forEach {
+            val childResult = visitChildren(parentResult, it)
+            it.foldChildren(childResult, visitChildren)
+        }
+    }
+
 
     fun buildTreeSyncCommands(destinationTree: Tree<T>): TreeSyncCommands<T> {
 

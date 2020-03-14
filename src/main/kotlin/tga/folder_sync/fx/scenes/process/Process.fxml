@@ -7,14 +7,18 @@
 <GridPane hgap="2.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" vgap="2.0" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tga.folder_sync.fx.scenes.process.Process">
   <columnConstraints>
     <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
   </columnConstraints>
   <rowConstraints>
       <RowConstraints maxHeight="-Infinity" minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
     <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
   </rowConstraints>
    <children>
-      <TreeView fx:id="files" prefHeight="200.0" prefWidth="200.0" GridPane.rowIndex="1" />
-      <Button mnemonicParsing="false" onAction="#loadSrc" text="Load" />
+       <Button mnemonicParsing="false" onAction="#loadSrc" text="Load" />
+      <TreeView fx:id="filesSrcTreeView" prefHeight="200.0" prefWidth="200.0" GridPane.rowIndex="1" />
+
+      <Button mnemonicParsing="false" onAction="#loadDst" text="Load" GridPane.columnIndex="1" />
+      <TreeView fx:id="filesDstTreeView"  prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
    </children>
    <padding>
       <Insets bottom="4.0" left="4.0" right="5.0" top="5.0" />

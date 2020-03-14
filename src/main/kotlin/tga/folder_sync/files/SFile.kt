@@ -15,15 +15,12 @@ abstract class SFile : Comparable<SFile> {
     abstract val isDirectory: Boolean
     abstract val size: Long
 
-    /**
-     * <p>The function builds and returns full folders tree which contains all sub-folders.</p>
-     *
-     * @param ordered defines if the tree will be ordered or not. True by default.
-     *                "ordered" means - all sub-folders inside a parent folder will be ordered by alphabet
-     *
-     */
-    abstract fun buildTree(ordered: Boolean = true): Tree<SFile>
     abstract fun relativeTo(base: SFile): String
+
+    /**
+     * List of all files and folders ionside this one
+     */
+    abstract fun children(): List<SFile>
 
     override fun compareTo(other: SFile) = when {
          this.isDirectory && !other.isDirectory ->  1
@@ -33,4 +30,40 @@ abstract class SFile : Comparable<SFile> {
     }
 
     override fun toString() = path
+
+    /**
+     * <p>The function builds and returns full folders tree which contains all sub-folders.</p>
+     *
+     * @param ordered defines if the tree will be ordered or not. True by default.
+     *                "ordered" means - all sub-folders inside a parent folder will be ordered by alphabet
+     *
+     */
+    fun buildTree(ordered: Boolean = true): Tree<SFile> {
+        val root: Tree<SFile> = Tree(this, null)
+        var timer = System.currentTimeMillis()
+        var counter = 0
+
+        fun addChildren(node: Tree<SFile>) {
+            counter++
+            if (counter % 1000 == 0 || (System.currentTimeMillis() - timer) > 1000) {
+                println("    $counter files scanned")
+                timer = System.currentTimeMillis()
+            }
+
+            val subfolders = node.obj.children()
+            if (ordered) subfolders.sorted()
+
+            subfolders.forEach {
+                val subNode = Tree(it, node)
+                node.children.add(subNode)
+                if (it.isDirectory) addChildren(subNode)
+            }
+        }
+
+        addChildren(root)
+        println("    $counter files scanned")
+
+        return root
+    }
+
 }

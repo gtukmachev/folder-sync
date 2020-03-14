@@ -42,7 +42,7 @@ class YandexFilesSequenceIterator(
 
     private fun tryToLoadNextValue(): Resource? {
 
-//        logger.trace("tryToLoadNextValue() >>>")
+        //logger.trace("tryToLoadNextValue() >>>")
         if (currentIterator != null && currentIterator!!.hasNext()) return currentIterator!!.next()//.also { logger.trace("tryToLoadNextValue() 1 <<< $it") }
 
         if (!isLastPage) {
@@ -67,9 +67,9 @@ class YandexFilesSequenceIterator(
 
         logger.trace("loadNextPageFromYandex() >>> page=$currentPage, req=$req")
         val resp = yandexCl.getFlatResourceList(req)
-        isLastPage = resp.total < pageSize
+        isLastPage = resp.items.size < pageSize
 
-        logger.trace("loadNextPageFromYandex(): <<< ${resp.items.size} items")
+        logger.trace("loadNextPageFromYandex(): <<< ${resp.items.size} items, isLastPage = $isLastPage")
         return resp.items?.iterator()
     }
 

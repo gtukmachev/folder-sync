@@ -8,6 +8,7 @@
     </appender>
 
     <root level="info"><appender-ref ref="STDOUT"/></root>
-    <logger name="report" level="info"><appender-ref ref="STDOUT"/></logger>
+    <logger name="report" level="info"/>
+    <logger name="tga.folder_sync.yandex" level="trace"/>
 
 </configuration>

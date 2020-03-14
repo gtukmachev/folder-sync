@@ -2,61 +2,61 @@ package tga.folder_sync.fx.scenes.process
 
 import javafx.event.ActionEvent
 import javafx.fxml.FXML
-import javafx.fxml.Initializable
-import javafx.scene.Group
-import javafx.scene.Node
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.scene.image.Image
-import javafx.scene.image.ImageView
-import tga.folder_sync.fx.model.FileItem
-import java.io.File
-import java.net.URL
-import java.util.*
+import tga.folder_sync.files.FoldersFactory
+import tga.folder_sync.files.SFile
+import tga.folder_sync.fx.model.Context
+import tga.folder_sync.tree.Tree
 
-class Process : Initializable {
+class Process {
 
     private val folderIcon      = Image(javaClass.getResourceAsStream("folder.png"))
     private val folderEmptyIcon = Image(javaClass.getResourceAsStream("folder-empty.png"))
     private val fileIcon        = Image(javaClass.getResourceAsStream("file.png"))
     private val clockIcon        = Image(javaClass.getResourceAsStream("clock.png"))
 
-    override fun initialize(location: URL?, resources: ResourceBundle?) {
-        files.root = TreeItem( FileItem(File("c:/temp")) ).apply {
-            isExpanded = true
-        }
+    private val srcPath = "c:/temp"
+    private val dstPath = "yandex://disk:/temp"
 
-    }
+    @FXML lateinit var filesSrcTreeView: TreeView<SFile>
+    @FXML lateinit var filesDstTreeView: TreeView<SFile>
 
     @FXML
-    lateinit var files: TreeView<FileItem>
+    fun loadDst(event: ActionEvent) {
+        println("Loading destination folder...")
+        Context.dstTree = loadAndVisualizeTree(dstPath, filesDstTreeView)
+    }
 
     @FXML
     fun loadSrc(event: ActionEvent) {
-
-
-        fun expandChildren(item: TreeItem<FileItem>) {
-            val file: File = item.value.file
-            val img: Node?
-            val overlay: Node = ImageView(clockIcon)
-            val children: List<File>?
-
-            if (file.isDirectory) {
-                children = file.listFiles()?.asList()?.sorted()
-                img = ImageView( if (children?.isNotEmpty() == true) folderIcon else folderEmptyIcon)
-            } else {
-                children = null
-                img = ImageView(fileIcon)
-            }
-
-            item.graphic = Group(img, overlay)
-
-            children?.forEach{ item.children.add( TreeItem(FileItem(it)) ) }
-
-            item.children.forEach{ expandChildren(it) }
-        }
-
-        expandChildren(files.root)
+        println("Loading source folder...")
+        Context.srcTree = loadAndVisualizeTree(srcPath, filesSrcTreeView)
     }
+
+    private fun loadAndVisualizeTree(path: String, treeView: TreeView<SFile>): Tree<SFile> {
+        println("\nScanning folder '$path'...")
+        val folder = FoldersFactory.create(path)
+        val tree = folder.buildTree()
+        visualizeTree( tree, treeView )
+        return tree
+    }
+
+
+    private fun visualizeTree(filesTree: Tree<SFile>, treeView: TreeView<SFile>) {
+        filesTree.fold(
+            {
+                sFileTreeItem: Tree<SFile> ->
+                    val rootViewTreeItem = TreeItem<SFile>( sFileTreeItem.obj )
+                    treeView.root = rootViewTreeItem
+                    rootViewTreeItem
+            }){
+                parentViewItem: TreeItem<SFile>, sFileTreeItem: Tree<SFile> ->
+                    val viewTreeItem = TreeItem<SFile>( sFileTreeItem.obj )
+                    parentViewItem.children.add( viewTreeItem )
+                    viewTreeItem
+            }
+}
 
 }
