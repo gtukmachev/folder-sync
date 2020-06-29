@@ -39,6 +39,8 @@ abstract class SFile : Comparable<SFile> {
      *
      */
     fun buildTree(ordered: Boolean = true): Tree<SFile> {
+        if (!this.exists) throw RuntimeException("The file/folder is not exists: '${this.path}'! ")
+
         val root: Tree<SFile> = Tree(this, null)
         var timer = System.currentTimeMillis()
         var counter = 0

@@ -38,7 +38,6 @@ fun init(args: Array<String>) {
     val dstFolder = FoldersFactory.create(destination)
     val dstTree = dstFolder.buildTree()
 
-
     if (logger.isDebugEnabled) {
         printTree("\nSource tree: ", srcTree)
         printTree("\nDestination tree: ", dstTree)
@@ -88,16 +87,20 @@ private fun printCommands(commands: TreeSyncCommands<SFile>, srcFolder: SFile, d
         out.println("#     total files size to sync: [${commands.toAdd.fold(0L){prev, el -> prev + el.obj.size}.pL()}] bytes")
         out.println("#")
 
-        for (src in commands.toAdd) {
-            val srcFile = src.obj
-            val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }"
+        for (srcTreeNode in commands.toAdd) {
+            srcTreeNode.deepFirstTravers { treeNode ->
+                val srcFile = treeNode.obj
+                val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }"
 
-            if (srcFile.isDirectory) { ////// ----- create a folder -----
-                out.println("  mk <folder> [$pL1] $dstFileName")
+                if (srcFile.isDirectory) { ////// ----- create a folder -----
+                    out.println("  mk <folder> [$pL1] $dstFileName")
 
-            } else { ////// ----- copy a file -----
-                val srcFileName = srcFile.absolutePath
-                out.println("copy < file > [${srcFile.size.pL()}] $srcFileName --> $dstFileName")
+                } else { ////// ----- copy a file -----
+                    val srcFileName = srcFile.absolutePath
+                    out.println("copy < file > [${srcFile.size.pL()}] $srcFileName --> $dstFileName")
+                }
+
+
             }
         }
 

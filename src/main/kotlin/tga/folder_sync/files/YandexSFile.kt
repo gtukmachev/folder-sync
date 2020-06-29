@@ -4,14 +4,11 @@ import com.yandex.disk.rest.Credentials
 import com.yandex.disk.rest.ResourcesArgs
 import com.yandex.disk.rest.RestClient
 import com.yandex.disk.rest.json.Resource
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * Created by grigory@clearscale.net on 2/21/2019.
  */
 class YandexSFile(val yandexFile: Resource) : SFile() {
-    private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
 
     companion object {
         val credentials: Credentials = Credentials(System.getProperty("user"), System.getProperty("token"))
@@ -27,14 +24,20 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         fun get(path: String) = YandexSFile(loadFromYandex(path))
     }
 
-    override fun relativeTo(base: SFile): String = TODO("not implemented")
+    override fun relativeTo(base: SFile): String {
+        if (yandexFile.path?.path?.startsWith(base.path) == true) {
+            return yandexFile.path.path.substring(base.path.length + 1)
+        }
+
+        throw RuntimeException("incomparable")
+    }
 
     override val name: String get() = yandexFile.name
 
-    override val absolutePath:  String get() = path
+    override val absolutePath:  String get() = yandexFile.path!!.toString()
     override val path:          String get() = yandexFile.path!!.path
     override val pathSeparator: String get() = "/"
-    override val exists:       Boolean get() = true
+    override val exists:       Boolean get() = true //todo CRITICAL implement or remove!
     override val isDirectory:  Boolean get() = yandexFile.isDir
     override val size:            Long get() = yandexFile.size
 

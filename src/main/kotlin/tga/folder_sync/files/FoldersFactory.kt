@@ -7,7 +7,7 @@ import java.io.File
  */
 object FoldersFactory {
 
-    fun create(name: String): SFile = when{
+    fun create(name: String): SFile = when {
         (name.startsWith("yandex://")) -> YandexSFile.get(name.substring("yandex://".length))
                                   else -> LocalSFile(File(name))
     }
