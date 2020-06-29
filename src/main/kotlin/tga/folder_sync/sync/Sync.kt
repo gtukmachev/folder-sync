@@ -23,21 +23,19 @@ fun sync(args: Array<String>) {
 
     val planFile = File(sessionFolder.absolutePath + "/plan.txt")
 
-    planFile.readLines()
+    //planFile.readLines()
 
     planFile.useLines { stringSequence ->
         var lineNumber = 0
 
-        val planActor = MasterActor( stringSequence
-            .map{ SyncCmd.makeCommand(it, ++lineNumber) }
-            .filter { it !is SkipCmd }
+        val planActor = MasterActor(
+                    stringSequence.map { SyncCmd.makeCommand(it, ++lineNumber) }
+                                  .filter { it !is SkipCmd }
         )
 
         planActor
             .performAsync()
-            .handleAsync { result, error ->
-                quit(result, error)
-            }
+            .handleAsync( ::quit )
 
         logger.info("The synchronization process started")
         //todo: add initial state report here

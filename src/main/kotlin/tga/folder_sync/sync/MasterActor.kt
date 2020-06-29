@@ -24,7 +24,6 @@ class MasterActor(private val commandsSource: Sequence<SyncCmd>) : Actor<Unit>()
 
     override fun perform() {
         reportExecutor.submit{ reportActor.perform() }
-
         handlingCommands()
         shutdownThreads()
     }
@@ -35,7 +34,7 @@ class MasterActor(private val commandsSource: Sequence<SyncCmd>) : Actor<Unit>()
             val currentCmd = cmds.next()
             tasksCounterLatch.increment()
             completableFutureViaSupplyAsync(cmdExecutor){ exec(currentCmd) }  // exec command
-                            .handleAsync(reportExecutor){ cmd, err -> report(cmd, err) } // report about the execution
+                            .handleAsync(reportExecutor, ::report) // report about the execution
         }
     }
 
@@ -60,7 +59,7 @@ class MasterActor(private val commandsSource: Sequence<SyncCmd>) : Actor<Unit>()
 
 
     private fun exec(cmd: SyncCmd): SyncCmd {
-        Thread.sleep(Random.nextLong(1000))
+        Thread.sleep(Random.nextLong(5000))
         return cmd.perform()
     }
 

@@ -93,11 +93,11 @@ private fun printCommands(commands: TreeSyncCommands<SFile>, srcFolder: SFile, d
                 val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }"
 
                 if (srcFile.isDirectory) { ////// ----- create a folder -----
-                    out.println("  mk <folder> [$pL1] $dstFileName")
+                    out.println("  mk <folder> |$pL1 | $dstFileName")
 
                 } else { ////// ----- copy a file -----
                     val srcFileName = srcFile.absolutePath
-                    out.println("copy < file > [${srcFile.size.pL()}] $srcFileName --> $dstFileName")
+                    out.println("copy < file > |${srcFile.size.pL()} | $srcFileName | $dstFileName")
                 }
 
 
@@ -108,7 +108,7 @@ private fun printCommands(commands: TreeSyncCommands<SFile>, srcFolder: SFile, d
             val dstFile = dstNode.obj
             val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${dstFile.relativeTo(dstFolder) }"
 
-            out.println(" del ${fileOrFolder(dstFile)} [$pL1] $dstFileName")
+            out.println(" del ${fileOrFolder(dstFile)} |$pL1 | $dstFileName")
         }
     }
 
