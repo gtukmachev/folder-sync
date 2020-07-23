@@ -11,7 +11,7 @@ class IT_set1 {
     private val rootFolder = "./target"
 
 
-    @Test fun init_set1() {
+    @Test fun set1_init() {
         // prepare test data
         val sourceFolderName = prepareSource()
         val destinationFolderName = prepareDestination()
@@ -19,7 +19,66 @@ class IT_set1 {
         // perform ta test action
         val outDirName = tga.folder_sync.init.init("target\\", "init", sourceFolderName, destinationFolderName)
 
-        checkSyncResults(outDirName, sourceFolderName)
+        checkInitResults(outDirName, sourceFolderName)
+    }
+
+    @Test fun set1_sync() {
+        // prepare test data
+        val sourceFolderName = prepareSource()
+        val destinationFolderName = prepareDestination()
+
+        // perform ta test action
+        val outDirName = tga.folder_sync.init.init("target\\", "init", sourceFolderName, destinationFolderName)
+
+        tga.folder_sync.sync
+            .sync(outDirName)
+            .join()
+
+        check_dst_is_the_dame_with_src(sourceFolderName, destinationFolderName)
+
+    }
+
+    private fun check_dst_is_the_dame_with_src(sourceFolderName: String, destinationFolderName: String) {
+        val srcTree = FolderUnit.fromFile(sourceFolderName)
+        val dstTree = FolderUnit.fromFile(destinationFolderName)
+
+        assertThat( srcTree, `is`(dstTree) )
+
+    }
+
+    private fun checkInitResults(outDirName: String, sourceFolderName: String) {
+        val planFile = File(outDirName + "/plan.txt")
+        assertTrue { planFile.exists() }
+
+        val absoluteRootPrefix =  File(sourceFolderName.substringBeforeLast("/")).absolutePath
+        val expectation = listOf(
+            "#   total files number to sync: [                   6] files",
+            "#     total files size to sync: [                  63] bytes",
+            "#",
+            "copy < file > |                  58 | @-root-@\\src\\file0.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\file0.txt",
+            "  mk <folder> |                   1 | @-root-@\\dst\\sub-1",
+            "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\file-1.01.txt",
+            "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.02.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\file-1.02.txt",
+            "  mk <folder> |                   1 | @-root-@\\dst\\sub-1\\sub-1-1",
+            "copy < file > |                  78 | @-root-@\\src\\sub-1\\sub-1-1\\file-1-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\sub-1-1\\file-1-1.01.txt",
+            "  mk <folder> |                   1 | @-root-@\\dst\\sub-2",
+            "  mk <folder> |                   1 | @-root-@\\dst\\sub-2\\sub-2-1",
+            "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-2\\sub-2-1\\file-2-1.01.txt",
+            "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.02.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-2\\sub-2-1\\file-2-1.02.txt",
+            "  mk <folder> |                   1 | @-root-@\\dst\\sub-3",
+            "copy < file > |                  68 | @-root-@\\src\\sub-3\\file-3.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-3\\file-3.01.txt",
+            "  mk <folder> |                   1 | @-root-@\\dst\\sub-3\\sub-3-1",
+            "  mk <folder> |                   1 | @-root-@\\dst\\sub-4",
+            "  mk <folder> |                   1 | @-root-@\\dst\\sub-4\\sub-4-1",
+            "  mk <folder> |                   1 | @-root-@\\dst\\sub-5"
+        ).map{
+            it.replace("@-root-@", absoluteRootPrefix)
+        }
+
+        val planLines = planFile.readLines()
+
+        assertThat( planLines.drop(5), `is`(expectation) )
+
     }
 
     private fun prepareSource(): String {
@@ -57,40 +116,6 @@ class IT_set1 {
         return files.name
     }
 
-    private fun checkSyncResults(outDirName: String, sourceFolderName: String) {
-        val planFile = File(outDirName + "/plan.txt")
-        assertTrue { planFile.exists() }
-
-        val absoluteRootPrefix =  File(sourceFolderName.substringBeforeLast("/")).absolutePath
-        val expectation = listOf(
-            "#   total files number to sync: [                   6] files",
-            "#     total files size to sync: [                  63] bytes",
-            "#",
-            "copy < file > |                  58 | @-root-@\\src\\file0.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\file0.txt",
-            "  mk <folder> |                   1 | @-root-@\\dst\\sub-1",
-            "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\file-1.01.txt",
-            "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.02.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\file-1.02.txt",
-            "  mk <folder> |                   1 | @-root-@\\dst\\sub-1\\sub-1-1",
-            "copy < file > |                  78 | @-root-@\\src\\sub-1\\sub-1-1\\file-1-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\sub-1-1\\file-1-1.01.txt",
-            "  mk <folder> |                   1 | @-root-@\\dst\\sub-2",
-            "  mk <folder> |                   1 | @-root-@\\dst\\sub-2\\sub-2-1",
-            "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-2\\sub-2-1\\file-2-1.01.txt",
-            "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.02.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-2\\sub-2-1\\file-2-1.02.txt",
-            "  mk <folder> |                   1 | @-root-@\\dst\\sub-3",
-            "copy < file > |                  68 | @-root-@\\src\\sub-3\\file-3.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-3\\file-3.01.txt",
-            "  mk <folder> |                   1 | @-root-@\\dst\\sub-3\\sub-3-1",
-            "  mk <folder> |                   1 | @-root-@\\dst\\sub-4",
-            "  mk <folder> |                   1 | @-root-@\\dst\\sub-4\\sub-4-1",
-            "  mk <folder> |                   1 | @-root-@\\dst\\sub-5"
-        ).map{
-            it.replace("@-root-@", absoluteRootPrefix)
-        }
-
-        val planLines = planFile.readLines()
-
-        assertThat( planLines.drop(5), `is`(expectation) )
-
-    }
 
 
 }

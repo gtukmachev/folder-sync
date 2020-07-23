@@ -32,4 +32,8 @@ class LocalSFile(val file: File) : SFile() {
     override fun copyToIt(srcFile: LocalSFile) {
         srcFile.file.copyTo(this.file)
     }
+
+    override fun mkFolder() {
+        this.file.mkdirs()
+    }
 }

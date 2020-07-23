@@ -3,9 +3,9 @@ package tga.folder_sync.sync
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.lang.System.exit
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.CompletableFuture
 
 /**
  * Created by grigory@clearscale.net on 2/25/2019.
@@ -14,9 +14,8 @@ import java.util.*
 private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.sync.sync")
 private val now = Date()
 
-fun sync(vararg args: String) {
-    val sessionArg: String? = if (args.size > 1) args[1] else null
-    val sessionFolder = getSession(sessionArg)
+fun sync(sessionFolderArg: String?): CompletableFuture<Unit> {
+    val sessionFolder = getSession(sessionFolderArg)
         ?: throw SessionFolderNotFound()
 
     logger.info("Session folder detected: {}", sessionFolder.absolutePath)
@@ -33,32 +32,33 @@ fun sync(vararg args: String) {
                                   .filter { it !is SkipCmd }
         )
 
-        planActor
+        val completableFuture = planActor
             .performAsync()
-            .handleAsync( ::quit )
+            //.handleAsync( ::quit )
 
         logger.info("The synchronization process started")
         //todo: add initial state report here
-        logger.info("Type Q or X and press <Enter> to stop execution")
-         
-        val exitCommands = setOf("Q", "q", "X", "x")
-        while ( !exitCommands.contains(readLine()) ) {  }
 
-        logger.warn("Execution was interrupted by a user.")
-        planActor.stop()
+        //todo: move the expectation of user inout into a separate thread
+        //     logger.info("Type Q or X and press <Enter> to stop execution")
+        //     val exitCommands = setOf("Q", "q", "X", "x")
+        //     while ( !exitCommands.contains(readLine()) ) {  }
+        //     logger.warn("Execution was interrupted by a user.")
+        //     planActor.stop()
 
+        completableFuture.join()
+        return completableFuture
     }
-
 }
 
-fun quit(result: Unit, error: Throwable?){
-    if (error != null) {
-        logger.error("The program finished with the error: {}", error)
-        exit(-1)
-    }
-
-    exit(0)
-}
+//fun quit(result: Unit, error: Throwable?){
+//    if (error != null) {
+//        logger.error("The program finished with the error: {}", error)
+//        exit(-1)
+//    }
+//
+//    exit(0)
+//}
 
 
 private fun getSession(sessionArg: String?): File? {

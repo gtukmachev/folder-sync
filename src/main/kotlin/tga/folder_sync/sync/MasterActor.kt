@@ -4,7 +4,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlin.random.Random
 
 /**
  * Created by grigory@clearscale.net on 2/25/2019.
@@ -59,7 +58,7 @@ class MasterActor(private val commandsSource: Sequence<SyncCmd>) : Actor<Unit>()
 
 
     private fun exec(cmd: SyncCmd): SyncCmd {
-        Thread.sleep(Random.nextLong(5000))
+        //Thread.sleep(Random.nextLong(1000))
         return cmd.perform()
     }
 

@@ -61,6 +61,10 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         )
     }
 
+    override fun mkFolder() {
+        TODO("Not yet implemented")
+    }
+
     inner class uploadProgressListener : ProgressListener {
         override fun updateProgress(loaded: Long, total: Long) {
             logger.info("$loaded / $total :: $path")

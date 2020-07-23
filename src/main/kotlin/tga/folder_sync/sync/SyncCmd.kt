@@ -26,9 +26,9 @@ interface SyncCmd {
             }
 
             val cmdObj =  when(commandLexem) {
-                      "mk <folder>" -> MkDirCmd(lineNumber, size, commandLine.substring(commndLength))
-                     "del <folder>" ->   DelCmd(lineNumber, size, commandLine.substring(commndLength))
-                     "del < file >" ->   DelCmd(lineNumber, size, commandLine.substring(commndLength))
+                      "mk <folder>" -> MkDirCmd(lineNumber, size, lexems[2])
+                     "del <folder>" ->   DelCmd(lineNumber, size, lexems[2])
+                     "del < file >" ->   DelCmd(lineNumber, size, lexems[2])
                     "copy < file >" ->   CopyCmd(lineNumber, size, lexems[2], lexems[3])
                     else -> SkipCmd(lineNumber)
                 }
@@ -43,13 +43,15 @@ interface SyncCmd {
 
 data class MkDirCmd(override val lineNumber: Int, override val fileSize: Int, val dstDirName: String) : SyncCmd {
     override fun perform(): MkDirCmd {
+        val dstFile: SFile = FoldersFactory.create(dstDirName)
+        dstFile.mkFolder()
         return this
     }
 }
 
 data class DelCmd(override val lineNumber: Int, override val fileSize: Int, val dstFileOrFolderName: String) : SyncCmd {
     override fun perform(): DelCmd {
-        throw RuntimeException("test")
+        TODO("delete command is not implemnted yet")
     }
 }
 
@@ -63,7 +65,6 @@ data class CopyCmd(override val lineNumber: Int, override val fileSize: Int, val
         return this
     }
 }
-
 
 data class SkipCmd(override val lineNumber: Int) : SyncCmd {
 

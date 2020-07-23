@@ -69,5 +69,6 @@ abstract class SFile : Comparable<SFile> {
     }
 
     abstract fun copyToIt(srcFile: LocalSFile)
+    abstract fun mkFolder()
 
 }
