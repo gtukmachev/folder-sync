@@ -68,4 +68,6 @@ abstract class SFile : Comparable<SFile> {
         return root
     }
 
+    abstract fun copyToIt(srcFile: LocalSFile)
+
 }

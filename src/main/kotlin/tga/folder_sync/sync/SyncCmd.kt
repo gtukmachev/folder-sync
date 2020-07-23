@@ -1,5 +1,9 @@
 package tga.folder_sync.sync
 
+import tga.folder_sync.files.FoldersFactory
+import tga.folder_sync.files.LocalSFile
+import tga.folder_sync.files.SFile
+
 /**
  * Created by grigory@clearscale.net on 2/25/2019.
  */
@@ -25,21 +29,10 @@ interface SyncCmd {
                       "mk <folder>" -> MkDirCmd(lineNumber, size, commandLine.substring(commndLength))
                      "del <folder>" ->   DelCmd(lineNumber, size, commandLine.substring(commndLength))
                      "del < file >" ->   DelCmd(lineNumber, size, commandLine.substring(commndLength))
-                    "copy < file >" ->   CopyCmd(lineNumber, size, lexems[2])
+                    "copy < file >" ->   CopyCmd(lineNumber, size, lexems[2], lexems[3])
                     else -> SkipCmd(lineNumber)
                 }
             return cmdObj
-        }
-
-        private fun extractCommandLexem(commandLine: String) = commandLine.substring(1, commndLength)
-        private fun extractSizeLexem(commandLine: String): String? {
-            val startPosition = commandLine.indexOf('[')
-            if (startPosition == -1) return null
-
-            val endPosition = commandLine.indexOf(']', startPosition)
-            if (endPosition == -1) throw RuntimeException("incorect format - cant't find the ']' symbol in the row: '$commandLine'")
-
-            return commandLine.substring(startPosition, endPosition)
         }
 
     }
@@ -60,8 +53,13 @@ data class DelCmd(override val lineNumber: Int, override val fileSize: Int, val 
     }
 }
 
-data class CopyCmd(override val lineNumber: Int, override val fileSize: Int, val srcFileName: String) : SyncCmd {
+data class CopyCmd(override val lineNumber: Int, override val fileSize: Int, val srcFileName: String, val dstFileName: String) : SyncCmd {
     override fun perform(): CopyCmd {
+        val srcFile: SFile = FoldersFactory.create(srcFileName)
+        val dstFile: SFile = FoldersFactory.create(dstFileName)
+
+        dstFile.copyToIt(srcFile as LocalSFile)
+
         return this
     }
 }

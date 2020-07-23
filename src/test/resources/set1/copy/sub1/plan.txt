@@ -1,0 +1,13 @@
+# A sync-session plan file
+#  - session planned at: 2020.06.29 at 17:03:14 NOVT
+#  -      source folder: 'C:\projects\own\folder_sync\src\test\resources\set2\temp'
+#  - destination folder: 'disk:/temp'
+#
+#   total files number to sync: [                   3] files
+#     total files size to sync: [                   1] bytes
+#
+  mk <folder> |                   1 | disk:/temp/3
+  mk <folder> |                   1 | disk:/temp/3\list1
+copy < file > |                  18 | C:\projects\own\folder_sync\src\test\resources\set2\temp\3\list1\file-3-list1__id-2.txt | disk:/temp/3\list1\file-3-list1__id-2.txt
+ del <folder> |                   1 | disk:/temp/2
+ del <folder> |                   1 | disk:/temp/list1
