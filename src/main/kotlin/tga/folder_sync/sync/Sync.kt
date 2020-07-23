@@ -14,7 +14,7 @@ import java.util.*
 private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.sync.sync")
 private val now = Date()
 
-fun sync(args: Array<String>) {
+fun sync(vararg args: String) {
     val sessionArg: String? = if (args.size > 1) args[1] else null
     val sessionFolder = getSession(sessionArg)
         ?: throw SessionFolderNotFound()

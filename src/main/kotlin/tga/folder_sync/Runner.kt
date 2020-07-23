@@ -7,7 +7,7 @@ import tga.folder_sync.sync.sync
 
 private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync")
 
-fun main(args: Array<String>) {
+fun main(vararg args: String) {
 
     logger.info("{}", args.joinToString(separator = " "))
 
@@ -15,8 +15,8 @@ fun main(args: Array<String>) {
         if (args.isEmpty()) throw RuntimeException("a command was not specified")
 
         when (args[0]) {
-            "init" -> init(args)
-            "sync" -> sync(args)
+            "init" -> init(System.getProperty("outDir"), *args)
+            "sync" -> sync(*args)
         }
 
     } catch (e: Exception) {

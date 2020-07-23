@@ -17,9 +17,9 @@ import java.util.*
  */
 private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.init.init")
 private val now = Date()
-private val outDir: String = System.getProperty("outDir") + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(now)
 
-fun init(args: Array<String>) {
+
+fun init(outDirPrefix: String, vararg args: String): String {
     if (args.size < 3) throw RuntimeException("not enough parameters!")
 
     val source = args[1]
@@ -49,8 +49,10 @@ fun init(args: Array<String>) {
 
 
     println("\nplan printing...")
-    printCommands(commands, srcFolder, dstFolder)
+    val outDir: String = outDirPrefix + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(now)
+    printCommands(outDir, commands, srcFolder, dstFolder)
 
+    return outDir
 }
 
 private fun printTree(title: String, tree: Tree<SFile>) {
@@ -64,7 +66,7 @@ private fun printTree(title: String, tree: Tree<SFile>) {
 
 private val pL1 = 1L.pL()
 
-private fun printCommands(commands: TreeSyncCommands<SFile>, srcFolder: SFile, dstFolder: SFile) {
+private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, srcFolder: SFile, dstFolder: SFile) {
 
     fun fileOrFolder(item: SFile) = when (item.isDirectory) {
         true  -> "<folder>"
