@@ -71,7 +71,7 @@ class IT_set1 {
             "  mk <folder> |                   1 | @-root-@\\dst\\sub-4",
             "  mk <folder> |                   1 | @-root-@\\dst\\sub-4\\sub-4-1",
             "  mk <folder> |                   1 | @-root-@\\dst\\sub-5"
-        ).map{
+        ).map {
             it.replace("@-root-@", absoluteRootPrefix)
         }
 
