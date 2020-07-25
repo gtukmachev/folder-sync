@@ -12,8 +12,11 @@ data class Tree<T : Comparable<T>>(
     val children: MutableList<Tree<T>> = mutableListOf()
 ){
 
-    private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
-    
+    companion object {
+
+        private val logger: Logger = LoggerFactory.getLogger(Tree.javaClass)
+    }
+
     fun deepFirstTravers(visit: (Tree<T>) -> Unit) {
         visit(this)
         for(node in children) node.deepFirstTravers(visit)
@@ -27,6 +30,7 @@ data class Tree<T : Comparable<T>>(
     /**
      * travers children only if the visit function return true
      */
+/*
     fun deepFirstTraversIf(visit: (Tree<T>) -> Boolean) {
         if (visit(this)) {
             for(node in children) node.deepFirstTraversIf(visit)
@@ -39,6 +43,7 @@ data class Tree<T : Comparable<T>>(
 
         this.foldChildren(rootResult, visitChildren)
     }
+*/
 
     private fun <D> foldChildren(parentResult: D, visitChildren: (parentResult: D, child: Tree<T>) -> D) {
         children.forEach {
@@ -46,7 +51,6 @@ data class Tree<T : Comparable<T>>(
             it.foldChildren(childResult, visitChildren)
         }
     }
-
 
     fun buildTreeSyncCommands(destinationTree: Tree<T>): TreeSyncCommands<T> {
 
@@ -106,8 +110,8 @@ data class Tree<T : Comparable<T>>(
         return TreeSyncCommands(toAdd = addCommands, toRemove = delCommands)
     }
 
-
     override fun toString(): String {
         return "Tree{ children.size = ${children.size}, obj = $obj }"
     }
+
 }

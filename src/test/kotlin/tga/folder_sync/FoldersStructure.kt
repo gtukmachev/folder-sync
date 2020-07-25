@@ -36,7 +36,6 @@ open class FolderUnit(val parent: FolderUnit?, val name: String) {
         return "FolderUnit(name='$name', children=$children)"
     }
 
-
     companion object {
         fun fromFile(rootFolder: String): FolderUnit {
             val rootFile = File(rootFolder)
@@ -63,8 +62,22 @@ open class FolderUnit(val parent: FolderUnit?, val name: String) {
         }
     }
 
+    fun Fld(folderName: String, f: folderContent? = null) {
+        val newChild = FolderUnit(this, this.name + "/" + folderName)
+        this.children += newChild
+        if (f != null) newChild.f()
+    }
 
+    fun Txt(fileName: String) {
+        val newFile = FileUnit(this, this.name + "/" + fileName, "txt")
+        this.children += newFile
+    }
 
+    fun clearAndMake(): FolderUnit {
+        clear()
+        make()
+        return this
+    }
 }
 
 class FileUnit(parent: FolderUnit?, name: String, val type: String) : FolderUnit(parent, name) {
@@ -102,13 +115,5 @@ fun Fld(folderName: String, f: folderContent? = null): FolderUnit {
     return rootFolder
 }
 
-fun FolderUnit.Fld(folderName: String, f: folderContent? = null) {
-    val newChild = FolderUnit(this, this.name + "/" + folderName)
-    this.children += newChild
-    if (f != null) newChild.f()
-}
+fun FolderStructure(folderName: String, f: folderContent? = null) = Fld(folderName, f).clearAndMake().name
 
-fun FolderUnit.Txt(fileName: String) {
-    val newFile = FileUnit(this, this.name + "/" + fileName, "txt")
-    this.children += newFile
-}
