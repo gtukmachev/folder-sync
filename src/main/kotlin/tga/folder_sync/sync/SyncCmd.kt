@@ -48,7 +48,11 @@ data class MkDirCmd(override val lineNumber: Int, override val fileSize: Int, va
 
 data class DelCmd(override val lineNumber: Int, override val fileSize: Int, val dstFileOrFolderName: String) : SyncCmd {
     override fun perform(): DelCmd {
-        TODO("delete command is not implemnted yet")
+        val file: SFile = FoldersFactory.create(dstFileOrFolderName)
+
+        file.removeFile()
+
+        return this
     }
 }
 

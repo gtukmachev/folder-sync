@@ -65,6 +65,11 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         TODO("Not yet implemented")
     }
 
+    override fun removeFile() {
+        val deleteResp = yandex.delete( path, false )
+        //todo: implement waiting, or protection from removing of not empty folder
+    }
+
     inner class uploadProgressListener : ProgressListener {
         override fun updateProgress(loaded: Long, total: Long) {
             logger.info("$loaded / $total :: $path")

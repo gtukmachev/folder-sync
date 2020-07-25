@@ -28,12 +28,15 @@ class LocalSFile(val file: File) : SFile() {
         return rel.path
     }
 
-
     override fun copyToIt(srcFile: LocalSFile) {
         srcFile.file.copyTo(this.file)
     }
 
     override fun mkFolder() {
         this.file.mkdirs()
+    }
+
+    override fun removeFile() {
+        this.file.delete()
     }
 }
