@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.CompletableFuture
 
 /**
  * Created by grigory@clearscale.net on 2/25/2019.
@@ -14,7 +13,7 @@ import java.util.concurrent.CompletableFuture
 private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.sync.sync")
 private val now = Date()
 
-fun sync(sessionFolderArg: String?): CompletableFuture<Unit> {
+fun sync(sessionFolderArg: String?) {
     val sessionFolder = getSession(sessionFolderArg)
         ?: throw SessionFolderNotFound()
 
@@ -26,43 +25,18 @@ fun sync(sessionFolderArg: String?): CompletableFuture<Unit> {
 
     planFile.useLines { stringSequence ->
         var lineNumber = 0
+        //val threadsNumber = config.getInt("threads")
 
-        val planActor = MasterActor(
-                    stringSequence.map { SyncCmd.makeCommand(it, ++lineNumber) }
-                                  .filter { it !is SkipCmd }
-        )
+        val commandsSequence = stringSequence
+            .map { SyncCmd.makeCommand(it, ++lineNumber) }
+            .filter { it !is SkipCmd }
 
-        val completableFuture = planActor
-            .performAsync()
-            //.handleAsync( ::quit )
+        commandsSequence.forEach{ it.perform() }
 
-        logger.info("The synchronization process started")
-        //todo: add initial state report here
-
-        //todo: move the expectation of user inout into a separate thread
-        //     logger.info("Type Q or X and press <Enter> to stop execution")
-        //     val exitCommands = setOf("Q", "q", "X", "x")
-        //     while ( !exitCommands.contains(readLine()) ) {  }
-        //     logger.warn("Execution was interrupted by a user.")
-        //     planActor.stop()
-
-        completableFuture.join()
-        return completableFuture
     }
 }
 
-//fun quit(result: Unit, error: Throwable?){
-//    if (error != null) {
-//        logger.error("The program finished with the error: {}", error)
-//        exit(-1)
-//    }
-//
-//    exit(0)
-//}
-
-
 private fun getSession(sessionArg: String?): File? {
-
     if (sessionArg != null) {
         val folder = File(sessionArg)
         if (!folder.exists() || !folder.isDirectory) {

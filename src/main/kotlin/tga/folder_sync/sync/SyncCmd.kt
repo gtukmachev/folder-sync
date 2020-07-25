@@ -13,9 +13,7 @@ interface SyncCmd {
     val fileSize: Int
 
     companion object {
-        val commndLength = "  mk <folder> ".length
-
-        fun makeCommand(commandLine: String, lineNumber: Int): SyncCmd {
+       fun makeCommand(commandLine: String, lineNumber: Int): SyncCmd {
             if (commandLine.trim().startsWith("#")) return SkipCmd(lineNumber) //isComment
 
             val lexems = commandLine.split("|").map{ it.trim() }
@@ -36,7 +34,6 @@ interface SyncCmd {
         }
 
     }
-
 
     fun perform(): SyncCmd
 }

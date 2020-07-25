@@ -3,6 +3,7 @@ package tga.folder_sync
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
+import tga.folder_sync.conf.Conf
 import java.io.File
 import kotlin.test.assertTrue
 
@@ -27,12 +28,12 @@ class IT_set1 {
         val sourceFolderName = prepareSource()
         val destinationFolderName = prepareDestination()
 
+        Conf.init()
+
         // perform ta test action
         val outDirName = tga.folder_sync.init.init("target\\", "init", sourceFolderName, destinationFolderName)
 
-        tga.folder_sync.sync
-            .sync(outDirName)
-            .join()
+        tga.folder_sync.sync.sync(outDirName)
 
         check_dst_is_the_dame_with_src(sourceFolderName, destinationFolderName)
 
