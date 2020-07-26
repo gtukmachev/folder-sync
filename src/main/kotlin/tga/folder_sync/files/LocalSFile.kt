@@ -37,6 +37,6 @@ class LocalSFile(val file: File) : SFile() {
     }
 
     override fun removeFile() {
-        this.file.delete()
+        this.file.deleteRecursively()
     }
 }

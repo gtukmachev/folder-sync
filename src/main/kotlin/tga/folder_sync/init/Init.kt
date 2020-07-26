@@ -83,10 +83,11 @@ private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, src
 
         val  sizeToAdd    = commands.toAdd   .fold(0L){prev, el -> prev + el.sum{ it.obj.size } }
         val countToAdd    = commands.toAdd   .fold(0L){prev, el -> prev + el.sum{ 1           } }
-        val countToRemove = commands.toRemove.fold(0L){prev, el -> prev + el.sum{ 1           } }
+        val  sizeToRemove = commands.toRemove.fold(0L){prev, el -> prev + el.sum{ 1           } }
+        val countToRemove = commands.toRemove.count()
 
         val countTotal = countToAdd + countToRemove
-        val  sizeTotal =  sizeToAdd + countToRemove
+        val  sizeTotal =  sizeToAdd + sizeToRemove
 
         out.println("# A sync-session plan file")
         out.println("#  - session planned at: ${SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z").format(now)}")

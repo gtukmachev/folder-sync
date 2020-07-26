@@ -11,29 +11,19 @@ class IT_set2_emptySrc {
         val destinationFolderName = prepareDestination()
 
         // perform ta test action
-        val outDirName = tga.folder_sync.init.init("target\\", "init", sourceFolderName, destinationFolderName)
+        val outDirName = tga.folder_sync.init.init("target\\\\", "init", sourceFolderName, destinationFolderName)
 
         syncPlanShouldBe(outDirName, sourceFolderName){
             listOf(
-                "#   total files number to sync: [                   6] files",
-                "#     total files size to sync: [                  63] bytes",
+                "#   total commands to run:                    6",
+                "#        total bytes sync:                   16",
                 "#",
-                "copy < file > |                  58 | @-root-@\\src\\file0.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\file0.txt",
-                "  mk <folder> |                   1 | @-root-@\\dst\\sub-1",
-                "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\file-1.01.txt",
-                "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.02.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\file-1.02.txt",
-                "  mk <folder> |                   1 | @-root-@\\dst\\sub-1\\sub-1-1",
-                "copy < file > |                  78 | @-root-@\\src\\sub-1\\sub-1-1\\file-1-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\sub-1-1\\file-1-1.01.txt",
-                "  mk <folder> |                   1 | @-root-@\\dst\\sub-2",
-                "  mk <folder> |                   1 | @-root-@\\dst\\sub-2\\sub-2-1",
-                "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-2\\sub-2-1\\file-2-1.01.txt",
-                "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.02.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-2\\sub-2-1\\file-2-1.02.txt",
-                "  mk <folder> |                   1 | @-root-@\\dst\\sub-3",
-                "copy < file > |                  68 | @-root-@\\src\\sub-3\\file-3.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-3\\file-3.01.txt",
-                "  mk <folder> |                   1 | @-root-@\\dst\\sub-3\\sub-3-1",
-                "  mk <folder> |                   1 | @-root-@\\dst\\sub-4",
-                "  mk <folder> |                   1 | @-root-@\\dst\\sub-4\\sub-4-1",
-                "  mk <folder> |                   1 | @-root-@\\dst\\sub-5"
+                " del < file > |                   1 | @-root-@\\dst\\file0.txt",
+                " del <folder> |                   5 | @-root-@\\dst\\sub-1",
+                " del <folder> |                   4 | @-root-@\\dst\\sub-2",
+                " del <folder> |                   3 | @-root-@\\dst\\sub-3",
+                " del <folder> |                   2 | @-root-@\\dst\\sub-4",
+                " del <folder> |                   1 | @-root-@\\dst\\sub-5"
             )
         }
     }
@@ -46,7 +36,7 @@ class IT_set2_emptySrc {
         Conf.init()
 
         // perform ta test action
-        val outDirName = tga.folder_sync.init.init("target\\", "init", sourceFolderName, destinationFolderName)
+        val outDirName = tga.folder_sync.init.init("target\\\\", "init", sourceFolderName, destinationFolderName)
 
         tga.folder_sync.sync.sync(outDirName)
 
