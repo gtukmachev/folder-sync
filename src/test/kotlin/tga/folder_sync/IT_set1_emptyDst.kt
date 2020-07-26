@@ -15,8 +15,8 @@ class IT_set1_emptyDst {
 
         syncPlanShouldBe(outDirName, sourceFolderName){
             listOf(
-                "#   total files number to sync: [                   6] files",
-                "#     total files size to sync: [                  63] bytes",
+                "#   total commands to run:                   16",
+                "#        total bytes sync:                  505",
                 "#",
                 "copy < file > |                  58 | @-root-@\\src\\file0.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\file0.txt",
                 "  mk <folder> |                   1 | @-root-@\\dst\\sub-1",

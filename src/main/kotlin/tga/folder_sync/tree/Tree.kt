@@ -31,10 +31,13 @@ data class Tree<T : Comparable<T>>(
         return this.foldChildren(rootResult, visit)
     }
 
+    fun sum(visit: (Tree<T>) -> Long) = fold( {root -> visit(root)} ){ prevResult, node -> prevResult + visit(node)}
+    fun sumInt(visit: (Tree<T>) -> Int ) = fold( {root -> visit(root)} ){ prevResult, node -> prevResult + visit(node)}
+
     /**
      * Volume of the node subtree - Number of all sub-nodes on all levels, include this one.
      */
-    fun volume(): Int = fold({1}){ count, _ -> count+1 }
+    fun volume(): Int = sumInt{ 1 }
 
     fun buildTreeSyncCommands(destinationTree: Tree<T>): TreeSyncCommands<T> {
 

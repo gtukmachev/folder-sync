@@ -80,18 +80,25 @@ private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, src
     }
 
     File("$outDir/plan.txt").printWriter().use { out ->
+
+        val  sizeToAdd    = commands.toAdd   .fold(0L){prev, el -> prev + el.sum{ it.obj.size } }
+        val countToAdd    = commands.toAdd   .fold(0L){prev, el -> prev + el.sum{ 1           } }
+        val countToRemove = commands.toRemove.fold(0L){prev, el -> prev + el.sum{ 1           } }
+
+        val countTotal = countToAdd + countToRemove
+        val  sizeTotal =  sizeToAdd + countToRemove
+
         out.println("# A sync-session plan file")
         out.println("#  - session planned at: ${SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z").format(now)}")
         out.println("#  -      source folder: '${srcFolder.absolutePath}'")
         out.println("#  - destination folder: '${dstFolder.absolutePath}'")
         out.println("#")
-        out.println("#   total files number to sync: [${(commands.toAdd.size + commands.toRemove.size).pL()}] files")
-        out.println("#     total files size to sync: [${commands.toAdd.fold(0L){prev, el -> prev + el.obj.size}.pL()}] bytes")
+        out.println("#   total commands to run: ${countTotal.pL()}")
+        out.println("#        total bytes sync: ${sizeTotal.pL()}")
         out.println("#")
 
         for (srcTreeNode in commands.toAdd) {
-            srcTreeNode.deepFirstTravers { treeNode ->
-                val srcFile = treeNode.obj
+            srcTreeNode.deepFirstTravers { treeNode ->               val srcFile = treeNode.obj
                 val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }"
 
                 if (srcFile.isDirectory) { ////// ----- create a folder -----
