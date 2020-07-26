@@ -13,8 +13,7 @@ data class Tree<T : Comparable<T>>(
 ){
 
     companion object {
-
-        private val logger: Logger = LoggerFactory.getLogger(Tree.javaClass)
+        private val logger: Logger = LoggerFactory.getLogger(this::class.java.declaringClass)
     }
 
     fun deepFirstTravers(visit: (Tree<T>) -> Unit) {
@@ -27,30 +26,15 @@ data class Tree<T : Comparable<T>>(
         for(node in children) node.deepFirstTraversWithLevel(nextD, visit)
     }
 
-    /**
-     * travers children only if the visit function return true
-     */
-/*
-    fun deepFirstTraversIf(visit: (Tree<T>) -> Boolean) {
-        if (visit(this)) {
-            for(node in children) node.deepFirstTraversIf(visit)
-        }
-    }
-
-    fun <D> fold(visitRoot: (Tree<T>) -> D, visitChildren: (parentResult: D, child: Tree<T>) -> D) {
-
+    fun <D> fold(visitRoot: (Tree<T>) -> D, visit: (parentResult: D, child: Tree<T>) -> D): D {
         val rootResult = visitRoot(this)
-
-        this.foldChildren(rootResult, visitChildren)
+        return this.foldChildren(rootResult, visit)
     }
-*/
 
-    private fun <D> foldChildren(parentResult: D, visitChildren: (parentResult: D, child: Tree<T>) -> D) {
-        children.forEach {
-            val childResult = visitChildren(parentResult, it)
-            it.foldChildren(childResult, visitChildren)
-        }
-    }
+    /**
+     * Volume of the node subtree - Number of all sub-nodes on all levels, include this one.
+     */
+    fun volume(): Int = fold({1}){ count, _ -> count+1 }
 
     fun buildTreeSyncCommands(destinationTree: Tree<T>): TreeSyncCommands<T> {
 
@@ -110,8 +94,15 @@ data class Tree<T : Comparable<T>>(
         return TreeSyncCommands(toAdd = addCommands, toRemove = delCommands)
     }
 
-    override fun toString(): String {
-        return "Tree{ children.size = ${children.size}, obj = $obj }"
+    override fun toString() =  "Tree{obj = $obj, children.size = ${children.size}}"
+
+    private fun <D> foldChildren(parentResult: D, visitChildren: (parentResult: D, child: Tree<T>) -> D): D {
+        var result = parentResult
+        children.forEach {
+            result = visitChildren(result, it)
+            result = it.foldChildren(result, visitChildren)
+        }
+        return result
     }
 
 }

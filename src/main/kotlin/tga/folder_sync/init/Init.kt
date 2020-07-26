@@ -110,7 +110,11 @@ private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, src
             val dstFile = dstNode.obj
             val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${dstFile.relativeTo(dstFolder) }"
 
-            out.println(" del ${fileOrFolder(dstFile)} |$pL1 | $dstFileName")
+            when(dstFile.isDirectory) {
+                 true -> out.println(" del <folder> |${dstNode.volume().pL()} | $dstFileName")
+                 else -> out.println(" del < file > |$pL1 | $dstFileName")
+            }
+
         }
     }
 
