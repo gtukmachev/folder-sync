@@ -62,7 +62,8 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
     }
 
     override fun mkFolder() {
-        TODO("Not yet implemented")
+        val makeResp = yandex.makeFolder( path )
+        // todo: implement response handling
     }
 
     override fun removeFile() {
