@@ -1,4 +1,4 @@
-package tga.folder_sync
+package tga.folder_sync.it
 
 import java.io.File
 
@@ -41,7 +41,7 @@ open class FolderUnit(val parent: FolderUnit?, val name: String) {
             val rootFile = File(rootFolder)
             if (!rootFile.exists()) throw RuntimeException("The folder is not exists: '$rootFolder'! ")
 
-            val root: FolderUnit = FolderUnit(null, ".")
+            val root = FolderUnit(null, ".")
 
             fun addChildren(node: FolderUnit, nodePath: String) {
                 val children = File(nodePath).listFiles()!!.sorted()
@@ -115,5 +115,7 @@ fun Fld(folderName: String, f: folderContent? = null): FolderUnit {
     return rootFolder
 }
 
-fun FolderStructure(folderName: String, f: folderContent? = null) = Fld(folderName, f).clearAndMake().name
+fun folderStructure(folderName: String, f: folderContent? = null) = Fld(folderName, f)
+    .clearAndMake()
+    .name
 

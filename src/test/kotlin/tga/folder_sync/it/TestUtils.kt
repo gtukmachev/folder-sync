@@ -1,4 +1,4 @@
-package tga.folder_sync
+package tga.folder_sync.it
 
 import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert

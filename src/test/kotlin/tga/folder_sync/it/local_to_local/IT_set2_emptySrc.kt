@@ -1,7 +1,11 @@
-package tga.folder_sync
+package tga.folder_sync.it.local_to_local
 
 import org.junit.Test
 import tga.folder_sync.conf.Conf
+import tga.folder_sync.it.folderStructure
+import tga.folder_sync.it.foldersShouldBeTheSame
+import tga.folder_sync.it.rootFolder
+import tga.folder_sync.it.syncPlanShouldBe
 
 class IT_set2_emptySrc {
 
@@ -13,7 +17,7 @@ class IT_set2_emptySrc {
         // perform ta test action
         val outDirName = tga.folder_sync.init.init("target\\\\", "init", sourceFolderName, destinationFolderName)
 
-        syncPlanShouldBe(outDirName, sourceFolderName){
+        syncPlanShouldBe(outDirName, sourceFolderName) {
             listOf(
                 "#   total commands to run:                    6",
                 "#        total bytes sync:                   16",
@@ -43,29 +47,30 @@ class IT_set2_emptySrc {
         foldersShouldBeTheSame(sourceFolderName, destinationFolderName)
     }
 
-    private fun prepareSource() = FolderStructure("$rootFolder/tests-set2/src")
-    private fun prepareDestination() = FolderStructure("$rootFolder/tests-set2/dst") {
-        Txt("file0")
-        Fld("sub-1"){
-            Fld("sub-1-1"){ Txt("file-1-1.01") }
-            Txt("file-1.01")
-            Txt("file-1.02")
-        }
-        Fld("sub-2"){
-            Fld("sub-2-1"){
-                Txt("file-2-1.01")
-                Txt("file-2-1.02")
+    private fun prepareSource() = folderStructure("$rootFolder/tests-set2/src")
+    private fun prepareDestination() =
+        folderStructure("$rootFolder/tests-set2/dst") {
+            Txt("file0")
+            Fld("sub-1") {
+                Fld("sub-1-1") { Txt("file-1-1.01") }
+                Txt("file-1.01")
+                Txt("file-1.02")
             }
+            Fld("sub-2") {
+                Fld("sub-2-1") {
+                    Txt("file-2-1.01")
+                    Txt("file-2-1.02")
+                }
+            }
+            Fld("sub-3") {
+                Fld("sub-3-1")
+                Txt("file-3.01")
+            }
+            Fld("sub-4") {
+                Fld("sub-4-1") {}
+            }
+            Fld("sub-5")
         }
-        Fld("sub-3"){
-            Fld("sub-3-1")
-            Txt("file-3.01")
-        }
-        Fld("sub-4"){
-            Fld("sub-4-1"){}
-        }
-        Fld("sub-5")
-    }
 
 
 }
