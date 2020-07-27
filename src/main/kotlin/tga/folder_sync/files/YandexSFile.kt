@@ -1,9 +1,11 @@
 package tga.folder_sync.files
 
+import com.google.gson.Gson
 import com.yandex.disk.rest.Credentials
 import com.yandex.disk.rest.ProgressListener
 import com.yandex.disk.rest.ResourcesArgs
 import com.yandex.disk.rest.RestClient
+import com.yandex.disk.rest.exceptions.http.HttpCodeException
 import com.yandex.disk.rest.json.Resource
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -22,7 +24,45 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
             val req = ResourcesArgs.Builder()
                 .setPath(path)
                 .build()
-            return yandex.getResources(req)
+            return try {
+                    yandex.getResources(req)
+                } catch (e: HttpCodeException) {
+
+
+                when {
+                        e.code == 404 -> {
+                            Gson().fromJson("""
+                                {
+                                    "public_key" : "-1",
+                                    "_embedded" : {
+                                        "sort" : "false",
+                                        "public_key" : "-2",
+                                        "items" : [],
+                                        "path" : "$path",
+                                        "limit" : 0,
+                                        "offset" : 0,
+                                        "total" : 0
+                                    },
+                                    "name" : "$path",
+                                    "created" : null,
+                                    "public_url" : null,
+                                    "origin_path" : null,
+                                    "modified" : null,
+                                    "deleted" : false,
+                                    "path" : "$path",
+                                    "md5" : null,
+                                    "type" : null,
+                                    "mime_type" : null,
+                                    "preview" : null,
+                                    "size" : 0,
+                                    "custom_properties" : { }
+                                }
+                            """.trimIndent(), Resource::class.java )
+                        }
+                        else -> throw e
+                    }
+                }
+
         }
 
         fun get(path: String) = YandexSFile(loadFromYandex(path))
@@ -36,8 +76,8 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         throw RuntimeException("incomparable")
     }
 
-    override val name: String get() = yandexFile.name
-
+    override val protocol:      String get() = "yandex://"
+    override val name:          String get() = yandexFile.name
     override val absolutePath:  String get() = yandexFile.path!!.toString()
     override val path:          String get() = yandexFile.path!!.path
     override val pathSeparator: String get() = "/"
@@ -67,8 +107,14 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
     }
 
     override fun removeFile() {
-        val deleteResp = yandex.delete( path, false )
-        //todo: implement waiting, or protection from removing of not empty folder
+        try {
+            yandex.delete(path, false)
+        } catch (e: HttpCodeException) {
+            when {
+                e.code == 404 -> {} // resource not found
+                         else -> throw RuntimeException(this.path, e)
+            }
+        }
     }
 
     inner class uploadProgressListener : ProgressListener {

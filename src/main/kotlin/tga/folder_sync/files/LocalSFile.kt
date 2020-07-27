@@ -7,6 +7,7 @@ import java.io.File
  */
 class LocalSFile(val file: File) : SFile() {
 
+    override val protocol:      String get() = ""
     override val name:          String get() = file.name
     override val absolutePath:  String get() = file.absolutePath
     override val path:          String get() = file.path

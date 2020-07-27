@@ -5,8 +5,8 @@ import com.yandex.disk.rest.ProgressListener
 import com.yandex.disk.rest.ResourcesArgs
 import com.yandex.disk.rest.RestClient
 import com.yandex.disk.rest.exceptions.http.HttpCodeException
-import com.yandex.disk.rest.json.Link
 import com.yandex.disk.rest.json.Resource
+import tga.folder_sync.files.FoldersFactory
 import tga.folder_sync.files.YandexSFile
 import java.io.File
 import kotlin.random.Random
@@ -80,34 +80,8 @@ open class FolderUnit(val parent: FolderUnit?, val name: String) {
     }
 
     fun clearYandex(){
-        val delLink = try {
-            yandex.delete(name, true)
-        } catch(e: HttpCodeException) {
-            when {
-                e.code == 404 -> clearYandex@return // Resource not found
-                         else -> throw e
-            }
-        }
-
-        when (delLink.httpStatus) {
-            Link.HttpStatus.inProgress -> {
-                    var operation = yandex.getOperation(delLink)
-                    var counter = 8
-                    while(operation.isInProgress && counter > 0) {
-                        Thread.sleep(1000)
-                        operation = yandex.getOperation(delLink)
-                        counter--
-                    }
-                    if (counter == 0 ) {
-                        throw RuntimeException("Timeout exception during deletion of a folder from yandex disk: '$name'")
-                    }
-            }
-            Link.HttpStatus.error -> {
-                throw RuntimeException("An Error during deletion of a folder from yandex disk: \n$delLink")
-            }
-            else -> {}
-        }
-
+        val subTree = FoldersFactory.create("yandex://$name").buildTree()
+        subTree.deepFirstTravers{ it.obj.removeFile() }
     }
 
     open fun makeLocal() {

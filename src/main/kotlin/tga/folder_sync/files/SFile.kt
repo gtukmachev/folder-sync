@@ -7,6 +7,7 @@ import tga.folder_sync.tree.Tree
  */
 abstract class SFile : Comparable<SFile> {
 
+    abstract val protocol: String
     abstract val name: String
     abstract val absolutePath: String
     abstract val path: String

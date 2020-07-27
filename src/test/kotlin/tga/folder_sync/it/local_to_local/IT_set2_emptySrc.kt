@@ -21,12 +21,12 @@ class IT_set2_emptySrc {
                 "#   total commands to run:                    6",
                 "#        total bytes sync:                   16",
                 "#",
-                " del < file > |                   1 | @-root-@\\dst\\file0.txt",
-                " del <folder> |                   5 | @-root-@\\dst\\sub-1",
-                " del <folder> |                   4 | @-root-@\\dst\\sub-2",
-                " del <folder> |                   3 | @-root-@\\dst\\sub-3",
-                " del <folder> |                   2 | @-root-@\\dst\\sub-4",
-                " del <folder> |                   1 | @-root-@\\dst\\sub-5"
+                " del < file > |                   1 | @-root-@/dst/file0.txt",
+                " del <folder> |                   5 | @-root-@/dst/sub-1",
+                " del <folder> |                   4 | @-root-@/dst/sub-2",
+                " del <folder> |                   3 | @-root-@/dst/sub-3",
+                " del <folder> |                   2 | @-root-@/dst/sub-4",
+                " del <folder> |                   1 | @-root-@/dst/sub-5"
             )
         }
     }

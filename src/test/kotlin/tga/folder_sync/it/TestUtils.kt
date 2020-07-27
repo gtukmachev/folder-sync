@@ -19,7 +19,7 @@ fun syncPlanShouldBe(outDirName: String, sourceDirName: String, planBuilder: () 
     val planFile = File(outDirName + "/plan.txt")
     assertTrue { planFile.exists() }
 
-    val absoluteRootPrefix =  File(sourceDirName.substringBeforeLast("/")).absolutePath
+    val absoluteRootPrefix =  File(sourceDirName.substringBeforeLast("/")).absolutePath.replace("\\", "/")
     val expectation = planBuilder().map {
         it.replace("@-root-@", absoluteRootPrefix)
     }

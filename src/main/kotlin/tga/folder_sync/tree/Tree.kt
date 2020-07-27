@@ -16,10 +16,16 @@ data class Tree<T : Comparable<T>>(
         private val logger: Logger = LoggerFactory.getLogger(this::class.java.declaringClass)
     }
 
-    fun deepFirstTravers(visit: (Tree<T>) -> Unit) {
+    fun parentFirstTravers(visit: (Tree<T>) -> Unit) {
         visit(this)
-        for(node in children) node.deepFirstTravers(visit)
+        for(node in children) node.parentFirstTravers(visit)
     }
+
+    fun deepFirstTravers(visit: (Tree<T>) -> Unit) {
+        for(node in children) node.parentFirstTravers(visit)
+        visit(this)
+    }
+
 
     fun <D> deepFirstTraversWithLevel(d: D, visit: (Tree<T>, d: D) -> D) {
         val nextD = visit(this, d)

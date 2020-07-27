@@ -79,6 +79,7 @@ private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, src
         folder.mkdir()
     }
 
+
     File("$outDir/plan.txt").printWriter().use { out ->
 
         val  sizeToAdd    = commands.toAdd   .fold(0L){prev, el -> prev + el.sum{ it.obj.size } }
@@ -99,14 +100,15 @@ private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, src
         out.println("#")
 
         for (srcTreeNode in commands.toAdd) {
-            srcTreeNode.deepFirstTravers { treeNode ->               val srcFile = treeNode.obj
-                val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }"
+            srcTreeNode.parentFirstTravers { treeNode ->
+                val srcFile = treeNode.obj
+                val dstFileName = "${dstFolder.protocol}${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }".replace("\\", "/")
 
                 if (srcFile.isDirectory) { ////// ----- create a folder -----
                     out.println("  mk <folder> |$pL1 | $dstFileName")
 
                 } else { ////// ----- copy a file -----
-                    val srcFileName = srcFile.absolutePath
+                    val srcFileName = srcFile.absolutePath.replace("\\", "/")
                     out.println("copy < file > |${srcFile.size.pL()} | $srcFileName | $dstFileName")
                 }
 
@@ -116,7 +118,7 @@ private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, src
 
         for (dstNode in commands.toRemove) {
             val dstFile = dstNode.obj
-            val dstFileName = "${dstFolder.absolutePath}${dstFolder.pathSeparator}${dstFile.relativeTo(dstFolder) }"
+            val dstFileName = "${dstFile.protocol}${dstFolder.absolutePath}${dstFolder.pathSeparator}${dstFile.relativeTo(dstFolder) }".replace("\\", "/")
 
             when(dstFile.isDirectory) {
                  true -> out.println(" del <folder> |${dstNode.volume().pL()} | $dstFileName")
