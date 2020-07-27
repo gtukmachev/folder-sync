@@ -1,19 +1,137 @@
 package tga.folder_sync.it
 
+import com.yandex.disk.rest.Credentials
+import com.yandex.disk.rest.ProgressListener
+import com.yandex.disk.rest.ResourcesArgs
+import com.yandex.disk.rest.RestClient
+import com.yandex.disk.rest.exceptions.http.HttpCodeException
+import com.yandex.disk.rest.json.Link
+import com.yandex.disk.rest.json.Resource
+import tga.folder_sync.files.YandexSFile
 import java.io.File
+import kotlin.random.Random
 
 typealias folderContent = FolderUnit.() -> Unit
 open class FolderUnit(val parent: FolderUnit?, val name: String) {
 
+    companion object {
+
+        val credentials: Credentials = Credentials(System.getProperty("user"), System.getProperty("token"))
+        val yandex: RestClient = RestClient(credentials)
+
+        fun loadFileInfoFromYandex(path: String): Resource {
+            val req = ResourcesArgs.Builder()
+                .setPath(path)
+                .build()
+            return yandex.getResources(req)
+        }
+
+        fun fromYandex(rootFolder: String): FolderUnit {
+
+            fun addChildren(node: FolderUnit, nodePath: String) {
+                val children = loadFileInfoFromYandex(nodePath).resourceList.items
+
+                children.forEach {
+                    val subNode: FolderUnit = when {
+                        it.isDir -> FolderUnit(node, it.name)
+                            else ->   FileUnit(node, it.name, "")
+                    }
+                    node.children.add(subNode)
+                    if (it.isDir) addChildren(subNode, it.path.path)
+                }
+            }
+
+            val root = FolderUnit(null, ".")
+            addChildren(root, rootFolder)
+
+            return root
+        }
+
+        fun fromFile(path: String): FolderUnit {
+            val rootFile = File(localRootFolder)
+            if (!rootFile.exists()) throw RuntimeException("The folder is not exists: '$localRootFolder'! ")
+
+            val root = FolderUnit(null, ".")
+
+            fun addChildren(node: FolderUnit, nodePath: String) {
+                val children = File(nodePath).listFiles()!!.sorted()
+
+                children.forEach {
+                    val subNode: FolderUnit = when {
+                        it.isDirectory -> FolderUnit(node, it.name)
+                        else -> FileUnit(node, it.name, "")
+                    }
+                    node.children.add(subNode)
+                    if (it.isDirectory) addChildren(subNode, it.path)
+                }
+            }
+
+            addChildren(root, localRootFolder)
+
+            return root
+        }
+
+    }
+
     val children = mutableListOf<FolderUnit>()
 
-    fun clear(){
+    fun clearLocal(){
         File(name).deleteRecursively()
     }
 
-    open fun make() {
+    fun clearYandex(){
+        val delLink = try {
+            yandex.delete(name, true)
+        } catch(e: HttpCodeException) {
+            when {
+                e.code == 404 -> clearYandex@return // Resource not found
+                         else -> throw e
+            }
+        }
+
+        when (delLink.httpStatus) {
+            Link.HttpStatus.inProgress -> {
+                    var operation = yandex.getOperation(delLink)
+                    var counter = 8
+                    while(operation.isInProgress && counter > 0) {
+                        Thread.sleep(1000)
+                        operation = yandex.getOperation(delLink)
+                        counter--
+                    }
+                    if (counter == 0 ) {
+                        throw RuntimeException("Timeout exception during deletion of a folder from yandex disk: '$name'")
+                    }
+            }
+            Link.HttpStatus.error -> {
+                throw RuntimeException("An Error during deletion of a folder from yandex disk: \n$delLink")
+            }
+            else -> {}
+        }
+
+    }
+
+    open fun makeLocal() {
         File(name).mkdirs()
-        children.forEach { it.make() }
+        children.forEach { it.makeLocal() }
+    }
+
+    open fun makeYandex() {
+        val folderFullName = name.substring("disk:/".length)
+        val folders = folderFullName.split("/")
+        var currentName = ""
+        folders.forEach{
+            currentName += "/$it"
+            try { yandex.makeFolder(currentName) }
+            catch (e : HttpCodeException) {
+                when {
+                    e.code == 409 && e.response.description.contains("existent directory") -> { }
+                    else -> throw e
+                }
+            }
+
+        }
+
+        children.forEach { it.makeYandex() }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -36,32 +154,6 @@ open class FolderUnit(val parent: FolderUnit?, val name: String) {
         return "FolderUnit(name='$name', children=$children)"
     }
 
-    companion object {
-        fun fromFile(rootFolder: String): FolderUnit {
-            val rootFile = File(rootFolder)
-            if (!rootFile.exists()) throw RuntimeException("The folder is not exists: '$rootFolder'! ")
-
-            val root = FolderUnit(null, ".")
-
-            fun addChildren(node: FolderUnit, nodePath: String) {
-                val children = File(nodePath).listFiles()!!.sorted()
-
-                children.forEach {
-                    val subNode: FolderUnit = when {
-                        it.isDirectory -> FolderUnit(node, it.name)
-                                  else -> FileUnit(node, it.name, "")
-                    }
-                    node.children.add(subNode)
-                    if (it.isDirectory) addChildren(subNode, it.path)
-                }
-            }
-
-            addChildren(root, rootFolder)
-
-            return root
-        }
-    }
-
     fun Fld(folderName: String, f: folderContent? = null) {
         val newChild = FolderUnit(this, this.name + "/" + folderName)
         this.children += newChild
@@ -73,16 +165,45 @@ open class FolderUnit(val parent: FolderUnit?, val name: String) {
         this.children += newFile
     }
 
-    fun clearAndMake(): FolderUnit {
-        clear()
-        make()
+    fun localClearAndMake(): FolderUnit {
+        clearLocal()
+        makeLocal()
         return this
     }
+
+    fun yandexClearAndMake(): FolderUnit {
+        clearYandex()
+        makeYandex()
+        return this
+    }
+
 }
 
 class FileUnit(parent: FolderUnit?, name: String, val type: String) : FolderUnit(parent, name) {
-    override fun make() {
+    override fun makeLocal() {
         val fullName = "$name.$type"
+        File(fullName).appendText("$fullName\nAuto-generated test file")
+    }
+
+    override fun makeYandex() {
+        fun randomFileName():String {
+            val volume = 'z' - 'a' + 1
+            fun rndChar(): Char = 'a'  + Random.nextInt(volume)
+
+            val chars = charArrayOf(rndChar(), rndChar(), rndChar(), rndChar(), rndChar(), rndChar(), rndChar(), rndChar(), rndChar(), rndChar(), rndChar(), rndChar())
+            return String(chars)
+        }
+
+        File("./target/tmp_yandex_files").mkdirs()
+        val fullName = "$name.$type"
+        val srcFile = File("./target/tmp_yandex_files/${randomFileName()}.$type")
+        srcFile.appendText("$fullName\nAuto-generated test file")
+
+        val uploadLink = YandexSFile.yandex.getUploadLink(fullName, true)
+        YandexSFile.yandex.uploadFile(
+            uploadLink, true, srcFile, TestUploadProgressListener()
+        )
+
         File(fullName).appendText("$fullName\nAuto-generated test file")
     }
 
@@ -106,6 +227,14 @@ class FileUnit(parent: FolderUnit?, name: String, val type: String) : FolderUnit
         return "FileUnit(type='$type')"
     }
 
+    inner class TestUploadProgressListener : ProgressListener {
+        override fun updateProgress(loaded: Long, total: Long) {
+        }
+
+        override fun hasCancelled(): Boolean {
+            return false
+        }
+    }
 
 }
 
@@ -115,7 +244,10 @@ fun Fld(folderName: String, f: folderContent? = null): FolderUnit {
     return rootFolder
 }
 
-fun folderStructure(folderName: String, f: folderContent? = null) = Fld(folderName, f)
-    .clearAndMake()
+fun localFolderStructure(folderName: String, f: folderContent? = null) = Fld("$localRootFolder/$folderName", f)
+    .localClearAndMake()
     .name
 
+fun yandexFolderStructure(folderName: String, f: folderContent? = null) = Fld("$yandexRootFolder/$folderName", f)
+    .yandexClearAndMake()
+    .name

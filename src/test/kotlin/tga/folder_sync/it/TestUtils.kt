@@ -5,7 +5,8 @@ import org.hamcrest.MatcherAssert
 import java.io.File
 import kotlin.test.assertTrue
 
-val rootFolder = "./target"
+val localRootFolder = "./target"
+val yandexRootFolder = "disk:/tests"
 
 fun foldersShouldBeTheSame(sourceFolderName: String, destinationFolderName: String) {
     val srcTree = FolderUnit.fromFile(sourceFolderName)

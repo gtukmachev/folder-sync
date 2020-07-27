@@ -2,9 +2,8 @@ package tga.folder_sync.it.local_to_local
 
 import org.junit.Test
 import tga.folder_sync.conf.Conf
-import tga.folder_sync.it.folderStructure
 import tga.folder_sync.it.foldersShouldBeTheSame
-import tga.folder_sync.it.rootFolder
+import tga.folder_sync.it.localFolderStructure
 import tga.folder_sync.it.syncPlanShouldBe
 
 class IT_set2_emptySrc {
@@ -47,9 +46,9 @@ class IT_set2_emptySrc {
         foldersShouldBeTheSame(sourceFolderName, destinationFolderName)
     }
 
-    private fun prepareSource() = folderStructure("$rootFolder/tests-set2/src")
+    private fun prepareSource() = localFolderStructure("tests-set2/src")
     private fun prepareDestination() =
-        folderStructure("$rootFolder/tests-set2/dst") {
+        localFolderStructure("tests-set2/dst") {
             Txt("file0")
             Fld("sub-1") {
                 Fld("sub-1-1") { Txt("file-1-1.01") }

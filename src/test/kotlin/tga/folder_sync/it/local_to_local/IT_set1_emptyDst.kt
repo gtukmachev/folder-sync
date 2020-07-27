@@ -2,9 +2,8 @@ package tga.folder_sync.it.local_to_local
 
 import org.junit.Test
 import tga.folder_sync.conf.Conf
-import tga.folder_sync.it.folderStructure
 import tga.folder_sync.it.foldersShouldBeTheSame
-import tga.folder_sync.it.rootFolder
+import tga.folder_sync.it.localFolderStructure
 import tga.folder_sync.it.syncPlanShouldBe
 
 class IT_set1_emptyDst {
@@ -22,18 +21,18 @@ class IT_set1_emptyDst {
                 "#   total commands to run:                   16",
                 "#        total bytes sync:                  505",
                 "#",
-                "copy < file > |                  58 | @-root-@\\src\\file0.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\file0.txt",
+                "copy < file > |                  58 | @-root-@\\src\\file0.txt | @-root-@\\dst\\file0.txt",
                 "  mk <folder> |                   1 | @-root-@\\dst\\sub-1",
-                "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\file-1.01.txt",
-                "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.02.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\file-1.02.txt",
+                "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.01.txt | @-root-@\\dst\\sub-1\\file-1.01.txt",
+                "copy < file > |                  68 | @-root-@\\src\\sub-1\\file-1.02.txt | @-root-@\\dst\\sub-1\\file-1.02.txt",
                 "  mk <folder> |                   1 | @-root-@\\dst\\sub-1\\sub-1-1",
-                "copy < file > |                  78 | @-root-@\\src\\sub-1\\sub-1-1\\file-1-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-1\\sub-1-1\\file-1-1.01.txt",
+                "copy < file > |                  78 | @-root-@\\src\\sub-1\\sub-1-1\\file-1-1.01.txt | @-root-@\\dst\\sub-1\\sub-1-1\\file-1-1.01.txt",
                 "  mk <folder> |                   1 | @-root-@\\dst\\sub-2",
                 "  mk <folder> |                   1 | @-root-@\\dst\\sub-2\\sub-2-1",
-                "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-2\\sub-2-1\\file-2-1.01.txt",
-                "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.02.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-2\\sub-2-1\\file-2-1.02.txt",
+                "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.01.txt | @-root-@\\dst\\sub-2\\sub-2-1\\file-2-1.01.txt",
+                "copy < file > |                  78 | @-root-@\\src\\sub-2\\sub-2-1\\file-2-1.02.txt | @-root-@\\dst\\sub-2\\sub-2-1\\file-2-1.02.txt",
                 "  mk <folder> |                   1 | @-root-@\\dst\\sub-3",
-                "copy < file > |                  68 | @-root-@\\src\\sub-3\\file-3.01.txt | C:\\projects\\own\\folder_sync\\.\\target\\tests-set1\\dst\\sub-3\\file-3.01.txt",
+                "copy < file > |                  68 | @-root-@\\src\\sub-3\\file-3.01.txt | @-root-@\\dst\\sub-3\\file-3.01.txt",
                 "  mk <folder> |                   1 | @-root-@\\dst\\sub-3\\sub-3-1",
                 "  mk <folder> |                   1 | @-root-@\\dst\\sub-4",
                 "  mk <folder> |                   1 | @-root-@\\dst\\sub-4\\sub-4-1",
@@ -57,7 +56,7 @@ class IT_set1_emptyDst {
         foldersShouldBeTheSame(sourceFolderName, destinationFolderName)
     }
 
-    private fun prepareSource() = folderStructure("$rootFolder/tests-set1/src") {
+    private fun prepareSource() = localFolderStructure("tests-set1/src") {
         Txt("file0")
         Fld("sub-1") {
             Fld("sub-1-1") { Txt("file-1-1.01") }
@@ -80,7 +79,6 @@ class IT_set1_emptyDst {
         Fld("sub-5")
     }
 
-    private fun prepareDestination() =
-        folderStructure("$rootFolder/tests-set1/dst")
+    private fun prepareDestination() = localFolderStructure("tests-set1/dst")
 
 }
