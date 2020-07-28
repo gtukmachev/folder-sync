@@ -27,8 +27,16 @@ fun sync(sessionFolderArg: String?) {
         var lineNumber = 0
         //val threadsNumber = config.getInt("threads")
 
+        var srcRoot: String? = null
+        var dstRoot: String? = null
+
         val commandsSequence = stringSequence
-            .map { SyncCmd.makeCommand(it, ++lineNumber) }
+            .map {
+                logger.trace(it)
+                if (it.startsWith("#  -      source folder:")) srcRoot = it.split(": ").get(1)
+                if (it.startsWith("#  - destination folder:")) dstRoot = it.split(": ").get(1)
+                SyncCmd.makeCommand(it, ++lineNumber, srcRoot, dstRoot)
+            }
             .filter { it !is SkipCmd }
 
         commandsSequence.forEach{ it.perform() }

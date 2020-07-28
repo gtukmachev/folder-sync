@@ -16,7 +16,7 @@ import java.util.*
  * Created by grigory@clearscale.net on 2/21/2019.
  */
 private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.init.init")
-private val now = Date()
+val now = Date()
 
 
 fun init(outDirPrefix: String, vararg args: String): String {
@@ -26,8 +26,8 @@ fun init(outDirPrefix: String, vararg args: String): String {
     val destination = args[2]
 
     println("New sync-session preparing started.")
-    println("    source: '$source'")
-    println("    destination: '$destination'")
+    println("    source: $source")
+    println("    destination: $destination")
 
 
     println("\nThe source folder scanning...")
@@ -92,8 +92,8 @@ private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, src
 
         out.println("# A sync-session plan file")
         out.println("#  - session planned at: ${SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z").format(now)}")
-        out.println("#  -      source folder: '${srcFolder.absolutePath}'")
-        out.println("#  - destination folder: '${dstFolder.absolutePath}'")
+        out.println("#  -      source folder: ${srcFolder.protocol}${srcFolder.absolutePath}")
+        out.println("#  - destination folder: ${dstFolder.protocol}${dstFolder.absolutePath}")
         out.println("#")
         out.println("#   total commands to run: ${countTotal.pL()}")
         out.println("#        total bytes sync: ${sizeTotal.pL()}")
@@ -102,14 +102,14 @@ private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, src
         for (srcTreeNode in commands.toAdd) {
             srcTreeNode.parentFirstTravers { treeNode ->
                 val srcFile = treeNode.obj
-                val dstFileName = "${dstFolder.protocol}${dstFolder.absolutePath}${dstFolder.pathSeparator}${srcFile.relativeTo(srcFolder) }".replace("\\", "/")
+                val dstFileName = srcFile.relativeTo(srcFolder)
 
                 if (srcFile.isDirectory) { ////// ----- create a folder -----
                     out.println("  mk <folder> |$pL1 | $dstFileName")
 
                 } else { ////// ----- copy a file -----
-                    val srcFileName = srcFile.absolutePath.replace("\\", "/")
-                    out.println("copy < file > |${srcFile.size.pL()} | $srcFileName | $dstFileName")
+                    val srcFileName = srcFile.relativeTo(srcFolder)
+                    out.println("copy < file > |${srcFile.size.pL()} | $srcFileName")
                 }
 
 
@@ -118,7 +118,7 @@ private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, src
 
         for (dstNode in commands.toRemove) {
             val dstFile = dstNode.obj
-            val dstFileName = "${dstFile.protocol}${dstFolder.absolutePath}${dstFolder.pathSeparator}${dstFile.relativeTo(dstFolder) }".replace("\\", "/")
+            val dstFileName = dstFile.relativeTo(dstFolder)
 
             when(dstFile.isDirectory) {
                  true -> out.println(" del <folder> |${dstNode.volume().pL()} | $dstFileName")

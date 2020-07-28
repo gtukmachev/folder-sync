@@ -22,7 +22,7 @@ data class Tree<T : Comparable<T>>(
     }
 
     fun deepFirstTravers(visit: (Tree<T>) -> Unit) {
-        for(node in children) node.parentFirstTravers(visit)
+        for(node in children) node.deepFirstTravers(visit)
         visit(this)
     }
 
@@ -62,14 +62,13 @@ data class Tree<T : Comparable<T>>(
             var src: Tree<T>? = null
             var dst: Tree<T>? = null
 
-            fun nextSrc() {src = srcIterator.nextOrNull(); logger.trace("${prefix}src = " + src?.obj)}
-            fun nextDst() {dst = dstIterator.nextOrNull(); logger.trace("${prefix}dst = " + dst?.obj)}
+            fun nextSrc() {src = srcIterator.nextOrNull()}
+            fun nextDst() {dst = dstIterator.nextOrNull()}
 
             fun addToDst() {
                 addCommands.add(src!!)
 //                src!!.deepFirstTraversWithLevel(prefix){ srcNode, subPrefix ->
 //                    addCommands.add(srcNode)
-//                    logger.trace("$subPrefix add " + srcNode.obj)
 //                    "$subPrefix    "
 //                }
                 nextSrc()
@@ -77,7 +76,6 @@ data class Tree<T : Comparable<T>>(
 
             fun delFromDst() {
                 delCommands.add(dst!!)
-                logger.trace("$prefix del " + dst!!.obj)
                 nextDst()
             }
 

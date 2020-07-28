@@ -1,13 +1,14 @@
-package tga.folder_sync.it.local_to_local
+package tga.folder_sync.it.local_to_yandex
 
 import org.junit.Test
 import tga.folder_sync.conf.Conf
 import tga.folder_sync.it.foldersShouldBeTheSame
 import tga.folder_sync.it.localFolderStructure
 import tga.folder_sync.it.syncPlanShouldBe
+import tga.folder_sync.it.yandexFolderStructure
 import java.text.SimpleDateFormat
 
-class IT_set2_emptySrc {
+class IT_set2_emptySrc_yandex {
 
     @Test fun initTest() {
         // prepare test data
@@ -28,12 +29,12 @@ class IT_set2_emptySrc {
                     #   total commands to run:                    6
                     #        total bytes sync:                   16
                     #
-                     del < file > |                   1 | file0.txt
                      del <folder> |                   5 | sub-1
                      del <folder> |                   4 | sub-2
                      del <folder> |                   3 | sub-3
                      del <folder> |                   2 | sub-4
                      del <folder> |                   1 | sub-5
+                     del < file > |                   1 | file0.txt
             """.trimIndent()
         }
     }
@@ -55,7 +56,7 @@ class IT_set2_emptySrc {
 
     private fun prepareSource() = localFolderStructure("tests-set2/src")
     private fun prepareDestination() =
-        localFolderStructure("tests-set2/dst") {
+        yandexFolderStructure("tests-set2/dst") {
             Txt("file0")
             Fld("sub-1") {
                 Fld("sub-1-1") { Txt("file-1-1.01") }

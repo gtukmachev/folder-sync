@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 class YandexSFile(val yandexFile: Resource) : SFile() {
 
     companion object {
-        val logger: Logger = LoggerFactory.getLogger(YandexSFile::class.java)
+        val log: Logger = LoggerFactory.getLogger(YandexSFile::class.java)
         val credentials: Credentials = Credentials(System.getProperty("user"), System.getProperty("token"))
         val yandex: RestClient = RestClient(credentials)
 
@@ -69,8 +69,9 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
     }
 
     override fun relativeTo(base: SFile): String {
-        if (yandexFile.path?.path?.startsWith(base.path) == true) {
-            return yandexFile.path.path.substring(base.path.length + 1)
+        val thisPath = yandexFile.path!!.path
+        if (thisPath.startsWith(base.path)) {
+            return thisPath.substring(base.path.length + 1)
         }
 
         throw RuntimeException("incomparable")
@@ -78,7 +79,7 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
 
     override val protocol:      String get() = "yandex://"
     override val name:          String get() = yandexFile.name
-    override val absolutePath:  String get() = yandexFile.path!!.toString()
+    override val absolutePath:  String by lazy { "disk:"+ yandexFile.path!!.path }
     override val path:          String get() = yandexFile.path!!.path
     override val pathSeparator: String get() = "/"
     override val exists:       Boolean get() = true //todo CRITICAL implement or remove!
@@ -86,15 +87,27 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
     override val size:            Long get() = yandexFile.size
 
     override fun children(): List<SFile> {
-        val yandexResource = loadFromYandex(path)
-        return yandexResource.resourceList
-            .items
-            .asSequence()
-            .map { YandexSFile(it) }
-            .toList();
+        if (!yandexFile.isDir) return emptyList()
+
+        var list: List<SFile>? = null
+        try {
+            val yandexResource = loadFromYandex(path)
+            list = yandexResource.resourceList
+                .items
+                .asSequence()
+                .map { YandexSFile(it) }
+                .toList();
+        } finally {
+            if (log.isTraceEnabled) {
+                log.trace("children '$path': ${list?.map{it.name}}")
+            }
+        }
+
+        return list!!
     }
 
     override fun copyToIt(srcFile: LocalSFile) {
+        log.trace("copy: ${srcFile.path} -> ${this.path}")
         val uploadLink = yandex.getUploadLink(this.yandexFile.path.path, true)
         yandex.uploadFile(
             uploadLink, true, srcFile.file, uploadProgressListener()
@@ -102,24 +115,34 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
     }
 
     override fun mkFolder() {
+        log.trace("mkFolder: $absolutePath")
         val makeResp = yandex.makeFolder( path )
         // todo: implement response handling
     }
 
     override fun removeFile() {
-        try {
-            yandex.delete(path, false)
-        } catch (e: HttpCodeException) {
-            when {
-                e.code == 404 -> {} // resource not found
-                         else -> throw RuntimeException(this.path, e)
+        val logPrefix = "delete: $absolutePath"
+        log.trace(logPrefix)
+
+        val subTree = buildTree()
+
+        subTree.deepFirstTravers{
+            try {
+                if (log.isTraceEnabled) log.trace("$logPrefix > ${it.obj.absolutePath}")
+                yandex.delete(it.obj.path, false)
+            } catch (e: HttpCodeException) {
+                when {
+                    e.code == 404 -> {} // resource not found
+                    else -> throw RuntimeException(this.path, e)
+                }
             }
         }
     }
 
     inner class uploadProgressListener : ProgressListener {
         override fun updateProgress(loaded: Long, total: Long) {
-            logger.info("$loaded / $total :: $path")
+            val percent = if (total == 0L) 100 else loaded / total * 100
+            log.trace("uploading `$path` :: $percent% ($loaded / $total) ")
         }
 
         override fun hasCancelled(): Boolean {

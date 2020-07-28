@@ -8,9 +8,9 @@ import java.io.File
 class LocalSFile(val file: File) : SFile() {
 
     override val protocol:      String get() = ""
-    override val name:          String get() = file.name
-    override val absolutePath:  String get() = file.absolutePath
-    override val path:          String get() = file.path
+    override val name:          String by lazy { file.name        .replace("\\", "/") }
+    override val absolutePath:  String by lazy { file.absolutePath.replace("\\", "/").replace("/./", "/") }
+    override val path:          String by lazy { file.path        .replace("\\", "/").replace("/./", "/") }
     override val pathSeparator: String get() = System.getProperty("file.separator")
     override val exists:       Boolean get() = file.exists()
     override val isDirectory:  Boolean by lazy { file.isDirectory }
@@ -26,7 +26,7 @@ class LocalSFile(val file: File) : SFile() {
     override fun relativeTo(base: SFile): String {
         val baseFile = File(base.path)
         val rel = this.file.relativeTo( baseFile )
-        return rel.path
+        return rel.path.replace("\\", "/")
     }
 
     override fun copyToIt(srcFile: LocalSFile) {
