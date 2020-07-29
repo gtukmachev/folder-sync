@@ -5,15 +5,18 @@ import org.slf4j.LoggerFactory
 import tga.folder_sync.files.FoldersFactory
 import tga.folder_sync.files.LocalSFile
 import tga.folder_sync.files.SFile
-import tga.folder_sync.sync.SyncCmd.Companion.log
 
 /**
  * Created by grigory@clearscale.net on 2/25/2019.
  */
-interface SyncCmd {
+abstract class SyncCmd(
+    val lineNumber: Int,
+    var completed: Boolean,
+    val fileSize: Int,
+    val fileName: String
+) {
 
-    val lineNumber: Int
-    val fileSize: Int
+    abstract fun doAction(): SyncCmd
 
     companion object {
         val log: Logger = LoggerFactory.getLogger("tga.folder_sync.sync.SyncCmd")
@@ -26,9 +29,11 @@ interface SyncCmd {
 
             val lexems = commandLine.split("|").map { it.trim() }
 
-            val commandLexem = lexems[0]
+            val wasCompleted = lexems[0] == "+"
+
+            val commandLexem = lexems[1]
             val size: Int = try {
-                lexems[1].toInt()
+                lexems[2].toInt()
             } catch (ex: Exception) {
                 throw RuntimeException(
                     "Error of parsing income file, in the line #$lineNumber. The second field (file size) unrecognized!",
@@ -37,10 +42,10 @@ interface SyncCmd {
             }
 
             val cmdObj = when (commandLexem) {
-                "mk <folder>" -> MkDirCmd(lineNumber, size, dstRoot + '/' + lexems[2])
-                "del <folder>" -> DelCmd(lineNumber, size, dstRoot + '/' + lexems[2])
-                "del < file >" -> DelCmd(lineNumber, size, dstRoot + '/' + lexems[2])
-                "copy < file >" -> CopyCmd(lineNumber, size, srcRoot + '/' + lexems[2], dstRoot + '/' + lexems[2])
+                  "mk <folder>" -> MkDirCmd(lineNumber, wasCompleted, size, dstRoot + '/' + lexems[3])
+                 "del <folder>" ->   DelCmd(lineNumber, wasCompleted, size, dstRoot + '/' + lexems[3])
+                 "del < file >" ->   DelCmd(lineNumber, wasCompleted, size, dstRoot + '/' + lexems[3])
+                "copy < file >" ->  CopyCmd(lineNumber, wasCompleted, size, srcRoot + '/' + lexems[3], dstRoot + '/' + lexems[3])
                 else -> SkipCmd(lineNumber)
             }
             return cmdObj
@@ -48,31 +53,63 @@ interface SyncCmd {
 
     }
 
-    fun perform(): SyncCmd
+    fun perform(): SyncCmd {
+        log.trace("${this::class.simpleName}.perform($lineNumber, $fileSize, $completed, $fileName")
+
+        val res = if (!completed) {
+            val r = doAction()
+            completed = true
+            r
+        } else {
+            this
+        }
+
+        return res
+    }
+
+    override fun toString() = "${this::class.simpleName}(lineNumber=$lineNumber, completed=$completed, fileSize=$fileSize)"
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SyncCmd) return false
+
+        if (lineNumber != other.lineNumber) return false
+        if (completed != other.completed) return false
+        if (fileSize != other.fileSize) return false
+        if (fileName != other.fileName) return false
+
+        return true
+    }
+    override fun hashCode(): Int {
+        var result = lineNumber
+        result = 31 * result + completed.hashCode()
+        result = 31 * result + fileSize
+        result = 31 * result + fileName.hashCode()
+        return result
+    }
+
 }
 
-data class MkDirCmd(override val lineNumber: Int, override val fileSize: Int, val dstDirName: String) : SyncCmd {
-    override fun perform(): MkDirCmd {
-        log.trace("MkDirCmd.perform($lineNumber, $fileSize, $dstDirName")
-        val dstFile: SFile = FoldersFactory.create(dstDirName)
+class MkDirCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
+    override fun doAction(): MkDirCmd {
+        val dstFile: SFile = FoldersFactory.create(fileName)
         dstFile.mkFolder()
         return this
     }
 }
 
-data class DelCmd(override val lineNumber: Int, override val fileSize: Int, val dstFileOrFolderName: String) : SyncCmd {
-    override fun perform(): DelCmd {
-        log.trace("DelCmd.perform($lineNumber, $fileSize, $dstFileOrFolderName")
-        val file: SFile = FoldersFactory.create(dstFileOrFolderName)
+class DelCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
+    override fun doAction(): DelCmd {
+        log.trace("DelCmd.perform($lineNumber, $fileSize, $fileName")
+        val file: SFile = FoldersFactory.create(fileName)
         file.removeFile()
         return this
     }
 }
 
-data class CopyCmd(override val lineNumber: Int, override val fileSize: Int, val srcFileName: String, val dstFileName: String) : SyncCmd {
-    override fun perform(): CopyCmd {
-        log.trace("CopyCmd.perform($lineNumber, $fileSize, $srcFileName, $dstFileName")
-        val srcFile: SFile = FoldersFactory.create(srcFileName)
+class CopyCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: String, val dstFileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
+    override fun doAction(): CopyCmd {
+        log.trace("CopyCmd.perform($lineNumber, $fileSize, $fileName, $dstFileName")
+        val srcFile: SFile = FoldersFactory.create(fileName)
         val dstFile: SFile = FoldersFactory.create(dstFileName)
 
         dstFile.copyToIt(srcFile as LocalSFile)
@@ -81,9 +118,8 @@ data class CopyCmd(override val lineNumber: Int, override val fileSize: Int, val
     }
 }
 
-data class SkipCmd(override val lineNumber: Int) : SyncCmd {
-    override val fileSize: Int = 0
-    override fun perform(): SkipCmd {
+class SkipCmd(lineNumber: Int) : SyncCmd(lineNumber, true, 0, "") {
+    override fun doAction(): SkipCmd {
         log.trace("SkipCmd.perform($lineNumber")
         return this
     }
