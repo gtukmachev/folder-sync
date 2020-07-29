@@ -1,3 +1,4 @@
+/*
 package tga.folder_sync.it.local_to_local
 
 import org.junit.Before
@@ -137,3 +138,4 @@ class IT_set1_emptyDst {
     private fun prepareDestination() = localFolderStructure("tests-set1/dst")
 
 }
+*/

@@ -42,12 +42,10 @@ class Sync(val sessionFolderArg: String?) {
 
 
         commandsSequence
-            .filter { it !is SkipCmd }
+            .filter { (it !is SkipCmd) && (!it.completed) }
             .forEach{ cmd ->
-                if (!cmd.completed) {
                     cmd.perform()
                     markAsComplete(planFile, planLines, cmd)
-                }
             }
     }
 

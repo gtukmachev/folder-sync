@@ -1,7 +1,8 @@
 package tga.folder_sync.init
 
 
-import tga.folder_sync.WithLogger
+import akka.actor.AbstractLoggingActor
+import akka.japi.pf.ReceiveBuilder
 import tga.folder_sync.files.FoldersFactory
 import tga.folder_sync.files.SFile
 import tga.folder_sync.pL
@@ -15,8 +16,13 @@ import java.util.*
  * Created by grigory@clearscale.net on 2/21/2019.
  */
 
-class Init(val outDirPrefix: String, val timestamp: Date, vararg val args: String) {
-    companion object : WithLogger()
+class InitActor(val outDirPrefix: String, val timestamp: Date, val args: Array<String>): AbstractLoggingActor() {
+    private val log = log()
+    override fun createReceive() = ReceiveBuilder()
+        .match(String::class.java)  { log.info("Hi, $it!") }
+        .match(Perform::class.java) { perform() }
+        .build()
+
 
     fun perform(): String {
         if (args.size < 3) throw RuntimeException("not enough parameters!")
@@ -129,6 +135,8 @@ class Init(val outDirPrefix: String, val timestamp: Date, vararg val args: Strin
 
     }
 
+
+    class Perform
 }
 
 

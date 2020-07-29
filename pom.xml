@@ -16,17 +16,27 @@
         <kotlin.code.style>official</kotlin.code.style>
         <junit.version>4.12</junit.version>
         <mockk.version>1.9.3</mockk.version>
-        <typesafe.config.version>1.4.0</typesafe.config.version>
+        <akka.version>2.6.8</akka.version>
     </properties>
 
     <dependencies>
         <dependency> <artifactId>kotlin-stdlib</artifactId>   <groupId>org.jetbrains.kotlin</groupId>  <version>${kotlin.version}</version>          </dependency>
-        <dependency> <artifactId>config</artifactId>          <groupId>com.typesafe</groupId>          <version>${typesafe.config.version}</version> </dependency>
         <dependency> <artifactId>logback-classic</artifactId> <groupId>ch.qos.logback</groupId>        <version>1.2.3</version> </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor-typed_2.13</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.yandex.android/disk-restapi-sdk -->
         <dependency> <artifactId>disk-restapi-sdk</artifactId> <groupId>com.yandex.android</groupId> <version>1.03</version> </dependency>
 
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor-testkit-typed_2.13</artifactId>
+            <version>${akka.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency> <artifactId>kotlin-test-junit</artifactId> <groupId>org.jetbrains.kotlin</groupId> <version>${kotlin.version}</version> <scope>test</scope> </dependency>
         <dependency> <artifactId>junit</artifactId>             <groupId>junit</groupId>                <version>${junit.version}</version>  <scope>test</scope> </dependency>
         <dependency> <artifactId>mockk</artifactId>             <groupId>io.mockk</groupId>             <version>${mockk.version}</version>  <scope>test</scope> </dependency>

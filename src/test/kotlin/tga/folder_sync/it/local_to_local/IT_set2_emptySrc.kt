@@ -1,3 +1,4 @@
+/*
 package tga.folder_sync.it.local_to_local
 
 import org.junit.Before
@@ -86,3 +87,4 @@ class IT_set2_emptySrc {
 
 
 }
+*/

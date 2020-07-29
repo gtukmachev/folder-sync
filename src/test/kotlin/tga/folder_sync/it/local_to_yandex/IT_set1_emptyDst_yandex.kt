@@ -1,3 +1,4 @@
+/*
 package tga.folder_sync.it.local_to_yandex
 
 import org.junit.Before
@@ -96,3 +97,4 @@ class IT_set1_emptyDst_yandex {
     private fun prepareDestination() = yandexFolderStructure("tests-set1/dst")
 
 }
+*/
