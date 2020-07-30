@@ -1,7 +1,7 @@
 package tga.folder_sync.sync
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import akka.actor.AbstractLoggingActor
+import akka.japi.pf.ReceiveBuilder
 import java.io.File
 import java.text.SimpleDateFormat
 
@@ -10,17 +10,20 @@ import java.text.SimpleDateFormat
  */
 
 
-class Sync(val sessionFolderArg: String?) {
+class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
 
-    companion object {
-        val logger: Logger = LoggerFactory.getLogger( this::class.java.declaringClass )
-    }
+    override fun createReceive() = ReceiveBuilder()
+            .match(Perform::class.java) {
+                perform()
+                sender().tell(Done("OK"), self())
+            }
+        .build()
 
     fun perform() {
         val sessionFolder = getSession(sessionFolderArg)
             ?: throw SessionFolderNotFound()
 
-        logger.info("Session folder detected: {}", sessionFolder.absolutePath)
+        log().info("Session folder detected: {}", sessionFolder.absolutePath)
 
         val planFile = File(sessionFolder.absolutePath + "/plan.txt")
 
@@ -34,12 +37,11 @@ class Sync(val sessionFolderArg: String?) {
 
         val commandsSequence = stringSequence
             .map {
-                logger.trace(it)
+                log().debug(it)
                 if (it.startsWith("#  -      source folder:")) srcRoot = it.split(": ").get(1)
                 if (it.startsWith("#  - destination folder:")) dstRoot = it.split(": ").get(1)
                 SyncCmd.makeCommand(it, ++lineNumber, srcRoot, dstRoot)
             }
-
 
         commandsSequence
             .filter { (it !is SkipCmd) && (!it.completed) }
@@ -88,6 +90,9 @@ class Sync(val sessionFolderArg: String?) {
 
     }
 
+    class Perform
+    data class Done(val result: String)
+    
 }
 
 class SpecifiedSessionFolderNotFound(folderName: String) : RuntimeException("can't see the folder '$folderName'")

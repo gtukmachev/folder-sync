@@ -64,7 +64,6 @@ abstract class SFile : Comparable<SFile> {
         }
 
         addChildren(root)
-        println("    $counter files scanned")
 
         return root
     }

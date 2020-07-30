@@ -2,8 +2,8 @@ package tga.folder_sync.init
 
 
 import akka.actor.AbstractLoggingActor
+import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
-import tga.folder_sync.files.FoldersFactory
 import tga.folder_sync.files.SFile
 import tga.folder_sync.pL
 import tga.folder_sync.tree.Tree
@@ -17,53 +17,58 @@ import java.util.*
  */
 
 class InitActor(val outDirPrefix: String, val timestamp: Date, val args: Array<String>): AbstractLoggingActor() {
-    private val log = log()
+
+    var srcTree: Tree<SFile>? = null
+    var dstTree: Tree<SFile>? = null
+
     override fun createReceive() = ReceiveBuilder()
-        .match(String::class.java)  { log.info("Hi, $it!") }
-        .match(Perform::class.java) { perform() }
+        .match(Perform::class.java                       ) { initiateFoldersLoading() }
+        .match(BuildTreeActor.SourceTree::class.java     ) { srcTree = it.tree; tryCompareTrees(); }
+        .match(BuildTreeActor.DestinationTree::class.java) { dstTree = it.tree; tryCompareTrees(); }
         .build()
 
+    private fun tryCompareTrees() {
+        if (dstTree == null || srcTree == null) return
 
-    fun perform(): String {
+        if (log().isDebugEnabled) {
+            printTree("\nSource tree: ", srcTree!!)
+            printTree("\nDestination tree: ", dstTree!!)
+            println("")
+        }
+
+        log().info("\nFiles comparing...")
+        val commands = srcTree!!.buildTreeSyncCommands(dstTree!!)
+
+
+        val outDir: String = outDirPrefix + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(timestamp)
+        log().info("\nplan printing to: $outDir/plan.txt")
+        printCommands(outDir, commands, srcTree!!.obj, dstTree!!.obj)
+
+        sender().tell(Done(outDir), self())
+
+    }
+
+
+    fun initiateFoldersLoading() {
         if (args.size < 3) throw RuntimeException("not enough parameters!")
 
         val source = args[1]
         val destination = args[2]
 
-        log.info("New sync-session preparing started.")
-        log.info("    source: $source")
-        log.info("    destination: $destination")
+        val buildTreeActor = context.actorOf(Props.create( BuildTreeActor::class.java ))
 
+        log().info("New sync-session preparing started.")
+        log().info("    source: $source")
+        log().info("    destination: $destination")
 
-        log.info("\nThe source folder scanning...")
-        val srcFolder = FoldersFactory.create(source)
-        val srcTree = srcFolder.buildTree()
-
-        log.info("\nThe destination folder scanning...")
-        val dstFolder = FoldersFactory.create(destination)
-        val dstTree = dstFolder.buildTree()
-
-        if (log.isDebugEnabled) {
-            printTree("\nSource tree: ", srcTree)
-            printTree("\nDestination tree: ", dstTree)
-            println("")
-        }
-
-        log.info("\nFiles comparing...")
-        val commands = srcTree.buildTreeSyncCommands(dstTree)
-
-
-        val outDir: String = outDirPrefix + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(timestamp)
-        log.info("\nplan printing to: $outDir/plan.txt")
-        printCommands(outDir, commands, srcFolder, dstFolder)
-
-        return outDir
+        buildTreeActor.tell( BuildTreeActor.Source(source),           self() )
+        buildTreeActor.tell( BuildTreeActor.Destination(destination), self() )
     }
 
     private fun printTree(title: String, tree: Tree<SFile>) {
-        log.debug(title)
+        log().debug(title)
         tree.deepFirstTraversWithLevel(" ") { node, prefix->
-            log.debug("${prefix}${node.obj.name}")
+            log().debug("${prefix}${node.obj.name}")
             "$prefix|   "
         }
 
@@ -137,6 +142,7 @@ class InitActor(val outDirPrefix: String, val timestamp: Date, val args: Array<S
 
 
     class Perform
+    data class Done(val outDir:String)
 }
 
 
