@@ -1,66 +1,107 @@
 package tga.folder_sync
 
+import akka.actor.AbstractLoggingActor
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.Props
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import tga.folder_sync.actors.ShutdownActor
+import akka.japi.pf.ReceiveBuilder
+import tga.folder_sync.akka.actor
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.sync.SyncActor
 import java.util.*
 
-private val logger: Logger = LoggerFactory.getLogger("tga.folder_sync")
-val akka = ActorSystem.create("AkkaSystem")
-
 fun main(vararg args: String) {
-    logger.debug("{}", args.joinToString(separator = " "))
+    val akka = ActorSystem.create("AkkaSystem")
+    val mainActor = akka.actor(MainActor::class)
+    mainActor.tell( MainActor.Start(args.asList()), ActorRef.noSender() )
+}
 
-    val shutdownActor = akka.actorOf(
-        Props.create(
-            ShutdownActor::class.java
-        )
-    )
+class MainActor : AbstractLoggingActor() {
 
+    lateinit var args: List<String>
 
-    try {
-        if (args.isEmpty()) throw RuntimeException("a command was not specified")
+    override fun createReceive() = ReceiveBuilder()
+         // A command to start the program
+        .match(Start::class.java, {m -> isInitCommand(m)}) { this.args = it.args; init() }
+        .match(Start::class.java, {m -> isSyncCommand(m)}) { this.args = it.args; sync() }
+        .match(Start::class.java                         ) { printHelp(); shutdownProgram() }
 
-        when (args[0]) {
-            "init" -> init(shutdownActor, *args)
-            "sync" -> sync(shutdownActor, *args)
-        }
+        // A command to finish the program (the job's done)
+        .match(InitActor.Done::class.java) { shutdownProgram() }
+        .match(SyncActor.Done::class.java) { shutdownProgram() }
 
-    } catch (e: Exception) {
-        println("Error: ${e.javaClass.simpleName} - ${e.message}")
-        throw e
+        .build()
+
+    private fun isInitCommand(m: Start) = m.args.isNotEmpty() && m.args[0] == "init"
+    private fun isSyncCommand(m: Start) = m.args.isNotEmpty() && m.args[0] == "sync"
+
+    private fun printHelp() {
+        println("""
+            
+            Safe Cloud Backup
+            
+            The utility allows you to backup your files to a cloud or another disk in a smart safty way.
+            
+            Syntax:
+            $>java -jar folder-sync.jar <command> <source folder> <destination folder>[ login=<login> pass=<pass>]
+            
+                <command> = { init | sync }
+                    init - To compare source and destination directory and create synchronization plan.
+                           The plan will be saved to the '' text file, and you can review and even edit it.
+                            
+                    sync - Perform synchronization using a plan that was built before. 
+                           During it's work the utility will run all the commands from the plan file.
+                           Each successfully handled comand will be marked in the file.
+                           
+                           At any time you can interrupt the process (use <Ctrl+C>).
+                           After interruption you can resume, and the sync process will be continued accordingly it's plan
+                
+                <source folder> - a folder with source files
+                    - it can be only a local folder (accessible on local file system level)
+                    - you can use both absolute or relative path
+                
+                <destination folder> - a destination folder
+                    - it can be only:
+                        a local folder (accessible on local file system level)
+                        a folder on yandex disk in this case use the following synttax:
+                            yandex://disk:/<path on your yandex disk>
+                            also, you have to provide login and password                        
+                
+                <login> and <password> - applicable only if the <destination folder> is a Yandex Disk folder
+                          define login to your the target Yandex account
+                          this parameter is optional. in case of missing - it will be requested to input.
+                          
+                          You can use another way to configure credentials:
+                          create '~/.yandex.conf' text file with the following content:
+                                login=...
+                                pass=...
+                          
+            
+        """.trimIndent())
     }
 
-    //akka.terminate()
-}
+    private fun shutdownProgram() {
+        context.system.terminate()
+    }
 
-
-fun init(shutdownActor: ActorRef, vararg args: String) {
-    val initActor = akka.actorOf(
-        Props.create(
+    fun init() {
+        val initActor = context.actorOf( Props.create (
             InitActor::class.java,
-            System.getProperty("outDir"),
-            Date(),
-            args
-        )
-    )
+                System.getProperty("outDir"),
+                Date(),
+                args
+        ), "initActor")
+        initActor.tell(InitActor.Perform(self()), self())
+    }
 
-    initActor.tell(InitActor.Perform(), shutdownActor)
+    fun sync() {
+        val sessionFolder = if (args.size > 1) args[1] else null
+        val syncActor = context.actor( SyncActor::class, sessionFolder )
+        syncActor.tell( SyncActor.Perform(), self() )
+    }
+
+    data class Start(val args: List<String>)
+
 }
 
-fun sync(shutdownActor: ActorRef, vararg args: String) {
-    val sessionFolder = if (args.size > 1) args[1] else null
-    val syncActor = akka.actorOf(
-        Props.create(
-            SyncActor::class.java,
-            sessionFolder
-        )
-    )
 
-    syncActor.tell( SyncActor.Perform(), shutdownActor )
-}

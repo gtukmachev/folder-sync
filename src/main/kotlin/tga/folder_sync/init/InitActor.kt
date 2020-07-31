@@ -2,6 +2,7 @@ package tga.folder_sync.init
 
 
 import akka.actor.AbstractLoggingActor
+import akka.actor.ActorRef
 import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
 import tga.folder_sync.files.SFile
@@ -16,10 +17,12 @@ import java.util.*
  * Created by grigory@clearscale.net on 2/21/2019.
  */
 
-class InitActor(val outDirPrefix: String, val timestamp: Date, val args: Array<String>): AbstractLoggingActor() {
+class InitActor(val outDirPrefix: String, val timestamp: Date, val args: List<String>): AbstractLoggingActor() {
 
     var srcTree: Tree<SFile>? = null
     var dstTree: Tree<SFile>? = null
+
+    var shutdownActor: ActorRef? = null
 
     override fun createReceive() = ReceiveBuilder()
         .match(Perform::class.java                       ) { initiateFoldersLoading() }
@@ -44,18 +47,20 @@ class InitActor(val outDirPrefix: String, val timestamp: Date, val args: Array<S
         log().info("\nplan printing to: $outDir/plan.txt")
         printCommands(outDir, commands, srcTree!!.obj, dstTree!!.obj)
 
-        sender().tell(Done(outDir), self())
+        shutdownActor!!.tell(Done(outDir), self())
 
     }
 
 
     fun initiateFoldersLoading() {
+        this.shutdownActor = sender()
+
         if (args.size < 3) throw RuntimeException("not enough parameters!")
 
         val source = args[1]
         val destination = args[2]
 
-        val buildTreeActor = context.actorOf(Props.create( BuildTreeActor::class.java ))
+        val buildTreeActor = context.actorOf(Props.create( BuildTreeActor::class.java ), "buildActor")
 
         log().info("New sync-session preparing started.")
         log().info("    source: $source")
@@ -141,7 +146,7 @@ class InitActor(val outDirPrefix: String, val timestamp: Date, val args: Array<S
     }
 
 
-    class Perform
+    data class Perform(val resultsListener: ActorRef)
     data class Done(val outDir:String)
 }
 
