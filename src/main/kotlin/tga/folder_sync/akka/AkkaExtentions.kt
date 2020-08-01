@@ -28,7 +28,7 @@ fun akka.actor.AbstractActor.ActorContext.actor(actorClass: KClass<*>, vararg pr
 fun akka.actor.ActorSystem.actor(actorClass: KClass<*>, vararg props: Any?): ActorRef {
     val name = actorClass.simpleName!!.decapitalize()
     return when {
-        props.isEmpty() -> this.actorOf(Props.create(actorClass.java       ), name)
-                   else -> this.actorOf(Props.create(actorClass.java, props), name)
+        props.isEmpty() -> this.actorOf(Props.create(actorClass.java        ), name)
+                   else -> this.actorOf(Props.create(actorClass.java, *props), name)
     }
 }

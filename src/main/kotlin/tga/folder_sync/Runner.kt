@@ -7,23 +7,26 @@ import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
 import tga.folder_sync.akka.actor
 import tga.folder_sync.init.InitActor
+import tga.folder_sync.params.Parameters
 import tga.folder_sync.sync.SyncActor
 import java.util.*
 
 fun main(vararg args: String) {
+    val params = Parameters.parse(*args)
+
     val akka = ActorSystem.create("AkkaSystem")
     val mainActor = akka.actor(MainActor::class)
-    mainActor.tell( MainActor.Start(args.asList()), ActorRef.noSender() )
+    mainActor.tell( MainActor.Start(params), ActorRef.noSender() )
 }
 
 class MainActor : AbstractLoggingActor() {
 
-    lateinit var args: List<String>
+    lateinit var params: Parameters
 
     override fun createReceive() = ReceiveBuilder()
          // A command to start the program
-        .match(Start::class.java, {m -> isInitCommand(m)}) { this.args = it.args; init() }
-        .match(Start::class.java, {m -> isSyncCommand(m)}) { this.args = it.args; sync() }
+        .match(Start::class.java, {m -> isInitCommand(m)}) { this.params = it.params; init() }
+        .match(Start::class.java, {m -> isSyncCommand(m)}) { this.params = it.params; sync() }
         .match(Start::class.java                         ) { printHelp(); shutdownProgram() }
 
         // A command to finish the program (the job's done)
@@ -32,8 +35,8 @@ class MainActor : AbstractLoggingActor() {
 
         .build()
 
-    private fun isInitCommand(m: Start) = m.args.isNotEmpty() && m.args[0] == "init"
-    private fun isSyncCommand(m: Start) = m.args.isNotEmpty() && m.args[0] == "sync"
+    private fun isInitCommand(m: Start) = m.params.command == Parameters.Command.`init`
+    private fun isSyncCommand(m: Start) = m.params.command == Parameters.Command.sync
 
     private fun printHelp() {
         println("""
@@ -43,8 +46,10 @@ class MainActor : AbstractLoggingActor() {
             The utility allows you to backup your files to a cloud or another disk in a smart safty way.
             
             Syntax:
-            $>java -jar folder-sync.jar <command> <source folder> <destination folder>[ login=<login> pass=<pass>]
-            
+            $>java -jar folder-sync.jar [<command> [<session-folder>] [<source folder> <destination folder>] [login=<login> pass=<pass>]]
+
+                in case of running WITHOUT parameters, the command will be = `init`
+                
                 <command> = { init | sync }
                     init - To compare source and destination directory and create synchronization plan.
                            The plan will be saved to the '' text file, and you can review and even edit it.
@@ -57,11 +62,13 @@ class MainActor : AbstractLoggingActor() {
                            After interruption you can resume, and the sync process will be continued accordingly it's plan
                 
                 <source folder> - a folder with source files
+                    - applicable for `init` command only
                     - it can be only a local folder (accessible on local file system level)
                     - you can use both absolute or relative path
                 
                 <destination folder> - a destination folder
-                    - it can be only:
+                    - applicable for `init` command only
+                    - it can reffer to one of the following folder types:
                         a local folder (accessible on local file system level)
                         a folder on yandex disk in this case use the following synttax:
                             yandex://disk:/<path on your yandex disk>
@@ -75,7 +82,11 @@ class MainActor : AbstractLoggingActor() {
                           create '~/.yandex.conf' text file with the following content:
                                 login=...
                                 pass=...
-                          
+                                
+                <session-folder> - a folder with synchronization plan that was built by `init` command
+                    - applicable for `sync` command only
+                    - the parameter allow you to build several ynchronization plans and manually run one of them
+                      (by default - the program will find a lat one and will use it)
             
         """.trimIndent())
     }
@@ -87,20 +98,18 @@ class MainActor : AbstractLoggingActor() {
     fun init() {
         val initActor = context.actorOf( Props.create (
             InitActor::class.java,
-                System.getProperty("outDir"),
                 Date(),
-                args
+                params
         ), "initActor")
         initActor.tell(InitActor.Perform(self()), self())
     }
 
     fun sync() {
-        val sessionFolder = if (args.size > 1) args[1] else null
-        val syncActor = context.actor( SyncActor::class, sessionFolder )
+        val syncActor = context.actor( SyncActor::class, params.sessionFolder )
         syncActor.tell( SyncActor.Perform(), self() )
     }
 
-    data class Start(val args: List<String>)
+    data class Start(val params: Parameters)
 
 }
 

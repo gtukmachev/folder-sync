@@ -7,6 +7,7 @@ import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
 import tga.folder_sync.files.SFile
 import tga.folder_sync.pL
+import tga.folder_sync.params.Parameters
 import tga.folder_sync.tree.Tree
 import tga.folder_sync.tree.TreeSyncCommands
 import java.io.File
@@ -17,12 +18,16 @@ import java.util.*
  * Created by grigory@clearscale.net on 2/21/2019.
  */
 
-class InitActor(val outDirPrefix: String, val timestamp: Date, val args: List<String>): AbstractLoggingActor() {
+class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingActor() {
 
     var srcTree: Tree<SFile>? = null
     var dstTree: Tree<SFile>? = null
 
     var shutdownActor: ActorRef? = null
+
+    companion object {
+        val pL1 = 1L.pL()
+    }
 
     override fun createReceive() = ReceiveBuilder()
         .match(Perform::class.java                       ) { initiateFoldersLoading() }
@@ -42,23 +47,18 @@ class InitActor(val outDirPrefix: String, val timestamp: Date, val args: List<St
         log().info("\nFiles comparing...")
         val commands = srcTree!!.buildTreeSyncCommands(dstTree!!)
 
-
-        val outDir: String = outDirPrefix + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(timestamp)
+        val outDir: String = params.outDir + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(timestamp)
         log().info("\nplan printing to: $outDir/plan.txt")
         printCommands(outDir, commands, srcTree!!.obj, dstTree!!.obj)
 
         shutdownActor!!.tell(Done(outDir), self())
-
     }
-
 
     fun initiateFoldersLoading() {
         this.shutdownActor = sender()
 
-        if (args.size < 3) throw RuntimeException("not enough parameters!")
-
-        val source = args[1]
-        val destination = args[2]
+        val source = params.src
+        val destination = params.dst
 
         val buildTreeActor = context.actorOf(Props.create( BuildTreeActor::class.java ), "buildActor")
 
@@ -76,24 +76,11 @@ class InitActor(val outDirPrefix: String, val timestamp: Date, val args: List<St
             log().debug("${prefix}${node.obj.name}")
             "$prefix|   "
         }
-
     }
 
-    private val pL1 = 1L.pL()
-
     private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, srcFolder: SFile, dstFolder: SFile) {
-
-        fun fileOrFolder(item: SFile) = when (item.isDirectory) {
-            true  -> "<folder>"
-            false -> "< file >"
-        }
-
         val folder = File(outDir)
-
-        if (!folder.exists()) {
-            folder.mkdir()
-        }
-
+        if (!folder.exists()) folder.mkdir()
 
         File("$outDir/plan.txt").printWriter().use { out ->
 
@@ -119,15 +106,13 @@ class InitActor(val outDirPrefix: String, val timestamp: Date, val args: List<St
                     val srcFile = treeNode.obj
                     val dstFileName = srcFile.relativeTo(srcFolder)
 
-                    if (srcFile.isDirectory) { ////// ----- create a folder -----
+                    if (srcFile.isDirectory) {
                         out.println("  |   mk <folder> |$pL1 | $dstFileName")
 
-                    } else { ////// ----- copy a file -----
+                    } else {
                         val srcFileName = srcFile.relativeTo(srcFolder)
                         out.println("  | copy < file > |${srcFile.size.pL()} | $srcFileName")
                     }
-
-
                 }
             }
 
@@ -139,8 +124,8 @@ class InitActor(val outDirPrefix: String, val timestamp: Date, val args: List<St
                     true -> out.println("  |  del <folder> |${dstNode.volume().pL()} | $dstFileName")
                     else -> out.println("  |  del < file > |$pL1 | $dstFileName")
                 }
-
             }
+
         }
 
     }
