@@ -1,6 +1,8 @@
 package tga.folder_sync.sync
 
 import akka.actor.AbstractLoggingActor
+import akka.actor.ActorRef
+import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
 import java.io.File
 import java.text.SimpleDateFormat
@@ -12,6 +14,13 @@ import java.text.SimpleDateFormat
 
 class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
 
+    lateinit var planFile: File
+    lateinit var planLines: Array<String>
+    lateinit var commandsSequence: Sequence<SyncCmd>
+
+    lateinit var reportActor: ActorRef
+    lateinit var cmdActor: ActorRef
+
     override fun createReceive() = ReceiveBuilder()
             .match(Perform::class.java) {
                 perform()
@@ -19,46 +28,22 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
             }
         .build()
 
-    fun perform() {
+    override fun preStart() {
         val sessionFolder = getSession(sessionFolderArg)
             ?: throw SessionFolderNotFound()
-
         log().info("Session folder detected: {}", sessionFolder.absolutePath)
 
-        val planFile = File(sessionFolder.absolutePath + "/plan.txt")
+        planFile = File(sessionFolder.absolutePath + "/plan.txt")
+        planLines = planFile.readLines().toTypedArray()
 
+        reportActor = context.actorOf( Props.create(ReportActor::class.java, planFile, planLines), "reportActor" )
+        cmdActor = context.actorOf( Props.create(CmdActor::class.java, reportActor), "cmdActor" )
 
-        val planLines = planFile.readLines().toTypedArray()
-        val stringSequence = planLines.asSequence()
-
-        var lineNumber = 0
-        var srcRoot: String? = null
-        var dstRoot: String? = null
-
-        val commandsSequence = stringSequence
-            .map {
-                log().debug(it)
-                if (it.startsWith("#  -      source folder:")) srcRoot = it.split(": ").get(1)
-                if (it.startsWith("#  - destination folder:")) dstRoot = it.split(": ").get(1)
-                SyncCmd.makeCommand(it, ++lineNumber, srcRoot, dstRoot)
-            }
-
-        commandsSequence
-            .filter { (it !is SkipCmd) && (!it.completed) }
-            .forEach{ cmd ->
-                    cmd.perform()
-                    markAsComplete(planFile, planLines, cmd)
-            }
+        commandsSequence = buildCommandsSequence(planLines)
     }
 
-    private fun markAsComplete(planFile: File, planLines: Array<String>, cmd: SyncCmd) {
-        val LN = cmd.lineNumber - 1
-        planLines[LN] = '+' + planLines[LN].substring(1)
-
-        planFile.printWriter().use { out ->
-            planLines.forEach( out::println )
-        }
-
+    fun perform() {
+        commandsSequence.forEach{ cmdActor.tell(it, self()) }
     }
 
     private fun getSession(sessionArg: String?): File? {
@@ -70,10 +55,9 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
             return folder
         }
 
-        val sessionsFolder = System.getProperty("outDir", "")
         val folderNamePattern = SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss")
 
-        val subFolders = File(sessionsFolder).listFiles{ f -> f.isDirectory
+        val subFolders = File(".").listFiles{ f ->
             if (!f.isDirectory) {
                 false
             } else {
@@ -92,6 +76,29 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
 
     class Perform
     data class Done(val result: String)
+
+    companion object {
+
+        fun buildCommandsSequence(planLines: Array<String>): Sequence<SyncCmd> {
+            var lineNumber = 0
+            var srcRoot: String? = null
+            var dstRoot: String? = null
+            return planLines.asSequence()
+                .map {
+                    if (it.startsWith("#  -      source folder:")) srcRoot = it.split(": ").get(1)
+                    if (it.startsWith("#  - destination folder:")) dstRoot = it.split(": ").get(1)
+                    lineNumber += 1
+                    try {
+                        SyncCmd.makeCommand(it, lineNumber, srcRoot, dstRoot)
+                    } catch (t: Throwable) {
+                        UnrecognizedCmd(lineNumber, it.startsWith("err"), t)
+                    }
+                }
+                .filter { (it !is SkipCmd) && (!it.completed) }
+
+        }
+
+    }
     
 }
 

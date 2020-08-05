@@ -124,3 +124,10 @@ class SkipCmd(lineNumber: Int) : SyncCmd(lineNumber, true, 0, "") {
         return this
     }
 }
+
+class UnrecognizedCmd(lineNumber: Int, completed: Boolean, val reason: Throwable) : SyncCmd(lineNumber, completed, 0, "") {
+    override fun doAction(): UnrecognizedCmd {
+        log.trace("UnrecognizedCmd.perform($lineNumber")
+        return this
+    }
+}

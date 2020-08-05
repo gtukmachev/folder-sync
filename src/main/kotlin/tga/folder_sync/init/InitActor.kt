@@ -107,11 +107,11 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
                     val dstFileName = srcFile.relativeTo(srcFolder)
 
                     if (srcFile.isDirectory) {
-                        out.println("  |   mk <folder> |$pL1 | $dstFileName")
+                        out.println("   |   mk <folder> |$pL1 | $dstFileName")
 
                     } else {
                         val srcFileName = srcFile.relativeTo(srcFolder)
-                        out.println("  | copy < file > |${srcFile.size.pL()} | $srcFileName")
+                        out.println("   | copy < file > |${srcFile.size.pL()} | $srcFileName")
                     }
                 }
             }
@@ -121,8 +121,8 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
                 val dstFileName = dstFile.relativeTo(dstFolder)
 
                 when(dstFile.isDirectory) {
-                    true -> out.println("  |  del <folder> |${dstNode.volume().pL()} | $dstFileName")
-                    else -> out.println("  |  del < file > |$pL1 | $dstFileName")
+                    true -> out.println("   |  del <folder> |${dstNode.volume().pL()} | $dstFileName")
+                    else -> out.println("   |  del < file > |$pL1 | $dstFileName")
                 }
             }
 

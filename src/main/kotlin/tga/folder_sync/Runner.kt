@@ -5,7 +5,6 @@ import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
-import tga.folder_sync.akka.actor
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.params.Parameters
 import tga.folder_sync.sync.SyncActor
@@ -15,7 +14,7 @@ fun main(vararg args: String) {
     val params = Parameters.parse(*args)
 
     val akka = ActorSystem.create("AkkaSystem")
-    val mainActor = akka.actor(MainActor::class)
+    val mainActor = akka.actorOf( Props.create(MainActor::class.java), "mainActor" )
     mainActor.tell( MainActor.Start(params), ActorRef.noSender() )
 }
 
@@ -105,7 +104,7 @@ class MainActor : AbstractLoggingActor() {
     }
 
     fun sync() {
-        val syncActor = context.actor( SyncActor::class, params.sessionFolder )
+        val syncActor = context.actorOf( Props.create(SyncActor::class.java, params.sessionFolder) )
         syncActor.tell( SyncActor.Perform(), self() )
     }
 
