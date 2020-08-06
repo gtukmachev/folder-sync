@@ -10,12 +10,15 @@ import org.junit.Test
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.it.foldersShouldBeTheSame
 import tga.folder_sync.it.localFolderStructure
+import tga.folder_sync.it.localRootFolder
 import tga.folder_sync.it.syncPlanShouldBe
 import tga.folder_sync.params.Parameters
 import tga.folder_sync.sec
 import tga.folder_sync.sync.SyncActor
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.test.assertTrue
 
 
 class IT_set1_empyDst {
@@ -145,6 +148,72 @@ class IT_set1_empyDst {
 
         }
     }
+
+    @Test
+    fun set1_partialSync() {
+        object : TestKit(system){
+
+            init {
+                val exclusions = listOf("sub-1", "sub-2", "sub-4")
+
+                // prepare test data
+                val sourceFolderName = prepareSource()
+                val destinationFolderName = prepareDestination()
+
+                val timestamp = Date()
+                val params = Parameters(
+                    command = Parameters.Command.`init`,
+                    src = sourceFolderName,
+                    dst = destinationFolderName,
+                    sessionFolder = null,
+                    outDir = "$sourceFolderName/../"
+                )
+
+                val initActor: ActorRef = system.actorOf(
+                    Props.create(
+                        InitActor::class.java,
+                        timestamp,
+                        params
+                    ), "initActor"
+                )
+
+                initActor.tell( InitActor.Perform(ref), ref )
+                val initResult: InitActor.Done = expectMsgClass(InitActor.Done::class.java)
+
+                val planFile = File("${initResult.outDir}/plan.txt")
+                val planLines = planFile.readLines().toTypedArray()
+                for (i in 0 until planLines.size) {
+                    val l = planLines[i]
+                    if (l[0] != '#') {
+                        if (exclusions.any{ l.contains(it) } ) {
+                            planLines[i] = '+' + l.substring(1)
+                        }
+                    }
+                }
+                planFile.printWriter().use { out ->
+                    planLines.forEach( out::println )
+                }
+
+                val syncActor = system.actorOf(Props.create(
+                    SyncActor::class.java,
+                    initResult.outDir
+                ), "syncActor")
+
+                syncActor.tell( SyncActor.Perform(), ref )
+                expectMsgClass( 10.sec(), SyncActor.Done::class.java )
+
+                for (f in exclusions ) {
+                    val folder = File("$localRootFolder/tests-set1/src/$f")
+                    assertTrue { folder.exists() }
+                    folder.deleteRecursively()
+                }
+
+                foldersShouldBeTheSame(sourceFolderName, destinationFolderName)
+            }
+
+        }
+    }
+
 
     private fun prepareSource() = localFolderStructure("tests-set1/src") {
         Txt("file0")
