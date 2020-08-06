@@ -23,7 +23,7 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
     var srcTree: Tree<SFile>? = null
     var dstTree: Tree<SFile>? = null
 
-    var shutdownActor: ActorRef? = null
+    var resultListener: ActorRef? = null
 
     companion object {
         val pL1 = 1L.pL()
@@ -51,11 +51,11 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
         log().info("\nplan printing to: $outDir/plan.txt")
         printCommands(outDir, commands, srcTree!!.obj, dstTree!!.obj)
 
-        shutdownActor!!.tell(Done(outDir), self())
+        resultListener!!.tell(Done(outDir), self())
     }
 
     fun initiateFoldersLoading() {
-        this.shutdownActor = sender()
+        this.resultListener = sender()
 
         val source = params.src
         val destination = params.dst
