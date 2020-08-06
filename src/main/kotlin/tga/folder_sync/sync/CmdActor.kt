@@ -20,7 +20,7 @@ class CmdActor(val reportActor: ActorRef) : AbstractLoggingActor() {
             err = e
         }
 
-        reportActor.tell( ReportActor.Done(result to err), self() )
+        reportActor.tell( ReportActor.Done(result, err), self() )
     }
 
 }

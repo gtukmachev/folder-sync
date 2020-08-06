@@ -20,12 +20,13 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
 
     lateinit var reportActor: ActorRef
     lateinit var cmdActor: ActorRef
+    var restOfResults: Int = 0
+
+    lateinit var listener: ActorRef
 
     override fun createReceive() = ReceiveBuilder()
-            .match(Perform::class.java) {
-                perform()
-                sender().tell(Done("OK"), self())
-            }
+            .match(Perform::class.java           ) { listener = sender(); perform() }
+            .match(ReportActor.Done::class.java  ) { checkIfDone(it) }
         .build()
 
     override fun preStart() {
@@ -36,14 +37,23 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
         planFile = File(sessionFolder.absolutePath + "/plan.txt")
         planLines = planFile.readLines().toTypedArray()
 
-        reportActor = context.actorOf( Props.create(ReportActor::class.java, planFile, planLines), "reportActor" )
+        reportActor = context.actorOf( Props.create(ReportActor::class.java, planFile, planLines, self()), "reportActor" )
         cmdActor = context.actorOf( Props.create(CmdActor::class.java, reportActor), "cmdActor" )
 
         commandsSequence = buildCommandsSequence(planLines)
+        restOfResults = 0
     }
 
     fun perform() {
-        commandsSequence.forEach{ cmdActor.tell(it, self()) }
+        commandsSequence.forEach{
+            restOfResults++
+            cmdActor.tell(it, self())
+        }
+    }
+
+    private fun checkIfDone(it: ReportActor.Done) {
+        restOfResults--
+        if (restOfResults == 0) listener.tell( Done("OK"), self() )
     }
 
     private fun getSession(sessionArg: String?): File? {

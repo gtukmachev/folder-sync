@@ -8,9 +8,12 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 import tga.folder_sync.init.InitActor
+import tga.folder_sync.it.foldersShouldBeTheSame
 import tga.folder_sync.it.localFolderStructure
 import tga.folder_sync.it.syncPlanShouldBe
 import tga.folder_sync.params.Parameters
+import tga.folder_sync.sec
+import tga.folder_sync.sync.SyncActor
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -35,7 +38,7 @@ class IT_set1_empyDst {
     }
 
     @Test
-    fun testIt() {
+    fun set1_init() {
         object : TestKit(system){
 
             init {
@@ -99,6 +102,49 @@ class IT_set1_empyDst {
         }
     }
 
+    @Test
+    fun set1_sync() {
+        object : TestKit(system){
+
+            init {
+                // prepare test data
+                val sourceFolderName = prepareSource()
+                val destinationFolderName = prepareDestination()
+
+                val timestamp = Date()
+                val params = Parameters(
+                    command = Parameters.Command.`init`,
+                    src = sourceFolderName,
+                    dst = destinationFolderName,
+                    sessionFolder = null,
+                    outDir = "$sourceFolderName/../"
+                )
+
+                val initActor: ActorRef = system.actorOf(
+                    Props.create(
+                        InitActor::class.java,
+                        timestamp,
+                        params
+                    ), "initActor"
+                )
+
+                // perform test action
+                initActor.tell( InitActor.Perform(ref), ref )
+                val initResult: InitActor.Done = expectMsgClass(InitActor.Done::class.java)
+
+                val syncActor = system.actorOf(Props.create(
+                    SyncActor::class.java,
+                    initResult.outDir
+                ), "syncActor")
+
+                syncActor.tell( SyncActor.Perform(), ref )
+                expectMsgClass( 10.sec(), SyncActor.Done::class.java )
+
+                foldersShouldBeTheSame(sourceFolderName, destinationFolderName)
+            }
+
+        }
+    }
 
     private fun prepareSource() = localFolderStructure("tests-set1/src") {
         Txt("file0")

@@ -1,30 +1,30 @@
 package tga.folder_sync.sync
 
 import akka.actor.AbstractLoggingActor
+import akka.actor.ActorRef
 import akka.japi.pf.ReceiveBuilder
 import java.io.File
 
-class ReportActor(val planFile: File, val planLines: Array<String>) : AbstractLoggingActor() {
+class ReportActor(val planFile: File, val planLines: Array<String>, val resultListener: ActorRef) : AbstractLoggingActor() {
 
-    data class Done(val result: Pair<SyncCmd, Throwable?>)
+    data class Done(val cmd: SyncCmd, val err: Throwable?)
 
     override fun createReceive(): Receive = ReceiveBuilder()
-        .match(Done::class.java){ report(it.result) }
+        .match(Done::class.java){ report(it) }
         .build()
 
-    private fun report(result: Pair<SyncCmd, Throwable?>) {
-        val (cmd, err) = result
-        val LN = cmd.lineNumber - 1
+    private fun report(result: Done) {
+        val LN = result.cmd.lineNumber - 1
 
         val result_ = when {
-            cmd is UnrecognizedCmd -> "err" + planLines[LN].substring(3) + " | " + toSingleStr(cmd.reason)
-                       err != null -> "err" + planLines[LN].substring(3) + " | " + toSingleStr(err)
-                              else -> " + " + planLines[LN].substring(3)
+            result.cmd is UnrecognizedCmd -> "err" + planLines[LN].substring(3) + " | " + toSingleStr(result.cmd.reason)
+                       result.err != null -> "err" + planLines[LN].substring(3) + " | " + toSingleStr(result.err)
+                                     else -> " + " + planLines[LN].substring(3)
         }
-
         planLines[LN] = result_
-
         saveFile()
+
+        resultListener.tell(result, self())
     }
 
     private fun saveFile() {
