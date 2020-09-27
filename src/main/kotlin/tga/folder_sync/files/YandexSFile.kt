@@ -142,7 +142,7 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
     inner class uploadProgressListener : ProgressListener {
         override fun updateProgress(loaded: Long, total: Long) {
             val percent = if (total == 0L) 100 else loaded / total * 100
-            log.trace("uploading `$path` :: $percent% ($loaded / $total) ")
+            log.info("uploading `$path` :: $percent% ($loaded / $total) ")
         }
 
         override fun hasCancelled(): Boolean {

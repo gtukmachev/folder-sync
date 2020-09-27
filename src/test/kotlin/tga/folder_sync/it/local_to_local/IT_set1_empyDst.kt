@@ -19,6 +19,8 @@ import kotlin.test.assertTrue
 
 class IT_set1_empyDst : AbstractItTest() {
 
+    override fun testMaxDuration() = 10.sec()
+
     override fun prepareSource() = localFolderStructure("tests-set1/src") {
         Txt("file0")
         Fld("sub-1") {

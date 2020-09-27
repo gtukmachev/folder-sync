@@ -1,11 +1,14 @@
 package tga.folder_sync.it.local_to_yandex
 
+import tga.folder_sync.exts.min
 import tga.folder_sync.it.AbstractItTest
 import tga.folder_sync.it.localFolderStructure
 import tga.folder_sync.it.yandexFolderStructure
 
 
 class IT_yandex_set2_empySrc : AbstractItTest() {
+
+    override fun testMaxDuration() = 2.min()
 
     override fun prepareSource() = localFolderStructure("tests-set2/src")
 

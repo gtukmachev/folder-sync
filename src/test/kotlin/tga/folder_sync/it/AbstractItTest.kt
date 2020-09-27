@@ -7,16 +7,17 @@ import akka.testkit.javadsl.TestKit
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import tga.folder_sync.exts.sec
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.params.Parameters
 import tga.folder_sync.sync.SyncActor
 import java.text.SimpleDateFormat
+import java.time.Duration
 import java.util.*
 
 
 abstract class AbstractItTest {
 
+    abstract fun testMaxDuration(): Duration
     abstract fun prepareSource(): String
     abstract fun prepareDestination(): String
     abstract fun expectedInitPlan(date: String, sourceFolderName: String, destinationFolderName: String): String
@@ -73,7 +74,7 @@ abstract class AbstractItTest {
                 ), "syncActor")
 
                 syncActor.tell( SyncActor.Perform(), ref )
-                expectMsgClass( 10.sec(), SyncActor.Done::class.java )
+                expectMsgClass( testMaxDuration(), SyncActor.Done::class.java )
 
                 foldersShouldBeTheSame(sourceFolderName, destinationFolderName)
             }

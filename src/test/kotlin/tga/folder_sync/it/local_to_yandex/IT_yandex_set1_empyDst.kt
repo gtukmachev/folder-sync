@@ -4,7 +4,7 @@ import akka.actor.ActorRef
 import akka.actor.Props
 import akka.testkit.javadsl.TestKit
 import org.junit.Test
-import tga.folder_sync.exts.sec
+import tga.folder_sync.exts.min
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.it.*
 import tga.folder_sync.params.Parameters
@@ -15,6 +15,8 @@ import kotlin.test.assertTrue
 
 
 class IT_yandex_set1_empyDst : AbstractItTest() {
+
+    override fun testMaxDuration() = 1.min()
 
     override fun prepareSource() = localFolderStructure("tests-set1/src") {
         Txt("file0")
@@ -105,7 +107,7 @@ class IT_yandex_set1_empyDst : AbstractItTest() {
                     val l = planLines[i]
                     if (l[0] != '#') {
                         if (exclusions.any{ l.contains(it) } ) {
-                            planLines[i] = '+' + l.substring(1)
+                            planLines[i] = " +" + l.substring(2)
                         }
                     }
                 }
@@ -120,7 +122,7 @@ class IT_yandex_set1_empyDst : AbstractItTest() {
                 ), "syncActor")
 
                 syncActor.tell( SyncActor.Perform(), ref )
-                expectMsgClass( 10.sec(), SyncActor.Done::class.java )
+                expectMsgClass( testMaxDuration(), SyncActor.Done::class.java )
 
                 for (f in exclusions ) {
                     val folder = File("$localRootFolder/tests-set1/src/$f")

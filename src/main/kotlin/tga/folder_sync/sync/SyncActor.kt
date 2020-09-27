@@ -29,7 +29,7 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
     var srcRoot: String? = null
     var dstRoot: String? = null
 
-    val nOfRutees = 3
+    val nOfRutees = 2
 
     var commandsLaunchedNumber: Int = 0
     var errCount: Int = 0

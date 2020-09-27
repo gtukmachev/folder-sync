@@ -1,10 +1,13 @@
 package tga.folder_sync.it.local_to_local
 
+import tga.folder_sync.exts.sec
 import tga.folder_sync.it.AbstractItTest
 import tga.folder_sync.it.localFolderStructure
 
 
 class IT_set2_empySrc : AbstractItTest() {
+
+    override fun testMaxDuration() = 10.sec()
 
     override fun prepareSource() = localFolderStructure("tests-set2/src")
 
