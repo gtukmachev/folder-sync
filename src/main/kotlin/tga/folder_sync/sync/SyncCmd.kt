@@ -33,7 +33,7 @@ abstract class SyncCmd(
 
             val commandLexem = lexems[1]
             val size: Int = try {
-                lexems[2].toInt()
+                lexems[2].replace(".", "").replace(",", "").toInt()
             } catch (ex: Exception) {
                 throw RuntimeException(
                     "Error of parsing income file, in the line #$lineNumber. The second field (file size) unrecognized!",
