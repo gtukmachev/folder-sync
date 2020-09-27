@@ -3,12 +3,12 @@ package tga.folder_sync.it.local_to_yandex
 
 import org.junit.Before
 import org.junit.Test
-import tga.folder_sync.init.Init
+import tga.folder_sync.init.InitActor
 import tga.folder_sync.it.foldersShouldBeTheSame
 import tga.folder_sync.it.localFolderStructure
 import tga.folder_sync.it.syncPlanShouldBe
 import tga.folder_sync.it.yandexFolderStructure
-import tga.folder_sync.sync.Sync
+import tga.folder_sync.sync.SyncActor
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -21,7 +21,7 @@ class IT_set1_emptyDst_yandex {
         val destinationFolderName = prepareDestination()
 
         // perform ta test action
-        val init = Init("target\\", Date(),  "init", sourceFolderName, destinationFolderName)
+        val init = InitActor("target\\", Date(),  "init", sourceFolderName, destinationFolderName)
         val outDirName = init.perform()
 
         val date = SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z").format(init.timestamp)
@@ -61,11 +61,11 @@ class IT_set1_emptyDst_yandex {
         val sourceFolderName = prepareSource()
         val destinationFolderName = prepareDestination()
 
-        val init = Init("target\\", Date(),  "init", sourceFolderName, destinationFolderName)
+        val init = InitActor("target\\", Date(),  "init", sourceFolderName, destinationFolderName)
         val outDirName = init.perform()
 
         // perform ta test action
-        val sync = Sync(outDirName)
+        val sync = SyncActor(outDirName)
         sync.perform()
 
         foldersShouldBeTheSame(sourceFolderName, destinationFolderName)

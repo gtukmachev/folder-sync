@@ -1,18 +1,7 @@
-/*
 package tga.folder_sync.it.local_to_yandex
 
-import org.junit.Before
-import org.junit.Test
-import tga.folder_sync.init.Init
-import tga.folder_sync.it.foldersShouldBeTheSame
-import tga.folder_sync.it.localFolderStructure
-import tga.folder_sync.it.syncPlanShouldBe
-import tga.folder_sync.it.yandexFolderStructure
-import tga.folder_sync.sync.Sync
-import java.text.SimpleDateFormat
-import java.util.*
-
 class IT_set2_emptySrc_yandex {
+/*
     @Before fun waitSec() { Thread.sleep(1000) }
 
     @Test fun initTest() {
@@ -86,5 +75,5 @@ class IT_set2_emptySrc_yandex {
         }
 
 
-}
 */
+}

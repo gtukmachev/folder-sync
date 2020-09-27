@@ -4,12 +4,12 @@ import akka.actor.ActorRef
 import akka.actor.Props
 import akka.testkit.javadsl.TestKit
 import org.junit.Test
+import tga.folder_sync.exts.sec
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.it.foldersShouldBeTheSame
 import tga.folder_sync.it.localFolderStructure
 import tga.folder_sync.it.localRootFolder
 import tga.folder_sync.params.Parameters
-import tga.folder_sync.sec
 import tga.folder_sync.sync.SyncActor
 import java.io.File
 import java.util.*
@@ -71,7 +71,7 @@ class IT_set1_empyDst : AbstractItTest() {
             """.trimIndent()
 
     @Test
-    open fun testPartialSync() {
+    fun testPartialSync() {
         object : TestKit(system){
 
             init {
