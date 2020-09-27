@@ -1,4 +1,4 @@
-package tga.folder_sync.it.local_to_local
+package tga.folder_sync.it
 
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
@@ -9,8 +9,6 @@ import org.junit.Before
 import org.junit.Test
 import tga.folder_sync.exts.sec
 import tga.folder_sync.init.InitActor
-import tga.folder_sync.it.foldersShouldBeTheSame
-import tga.folder_sync.it.syncPlanShouldBe
 import tga.folder_sync.params.Parameters
 import tga.folder_sync.sync.SyncActor
 import java.text.SimpleDateFormat

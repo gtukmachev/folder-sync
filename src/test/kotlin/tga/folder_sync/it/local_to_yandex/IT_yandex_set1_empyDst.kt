@@ -1,4 +1,4 @@
-package tga.folder_sync.it.local_to_local
+package tga.folder_sync.it.local_to_yandex
 
 import akka.actor.ActorRef
 import akka.actor.Props
@@ -6,10 +6,7 @@ import akka.testkit.javadsl.TestKit
 import org.junit.Test
 import tga.folder_sync.exts.sec
 import tga.folder_sync.init.InitActor
-import tga.folder_sync.it.AbstractItTest
-import tga.folder_sync.it.foldersShouldBeTheSame
-import tga.folder_sync.it.localFolderStructure
-import tga.folder_sync.it.localRootFolder
+import tga.folder_sync.it.*
 import tga.folder_sync.params.Parameters
 import tga.folder_sync.sync.SyncActor
 import java.io.File
@@ -17,7 +14,7 @@ import java.util.*
 import kotlin.test.assertTrue
 
 
-class IT_set1_empyDst : AbstractItTest() {
+class IT_yandex_set1_empyDst : AbstractItTest() {
 
     override fun prepareSource() = localFolderStructure("tests-set1/src") {
         Txt("file0")
@@ -42,7 +39,7 @@ class IT_set1_empyDst : AbstractItTest() {
         Fld("sub-5")
     }
 
-    override fun prepareDestination() = localFolderStructure("tests-set1/dst")
+    override fun prepareDestination() = yandexFolderStructure("tests-set1/dst")
 
     override fun expectedInitPlan(date: String, sourceFolderName: String, destinationFolderName: String) = """
             # A sync-session plan file

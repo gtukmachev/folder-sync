@@ -82,7 +82,7 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
 
     fun raiseNextCommands() {
         val cmd = getNextCommand()
-        log().warning("[raiseNextCommands] commandsLaunchedNumber=$commandsLaunchedNumber, nOfRutees=$nOfRutees  cmd=${cmd}")
+        log().debug("[raiseNextCommands] commandsLaunchedNumber=$commandsLaunchedNumber, nOfRutees=$nOfRutees  cmd=${cmd}")
 
         if (cmd != null) {
             commandsLaunchedNumber++
@@ -90,18 +90,10 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
 
             if (commandsLaunchedNumber < nOfRutees) raiseNextCommands()
         }
-//
-//
-//        log().warning("[raiseNextCommands] commandsLaunchedNumber=$commandsLaunchedNumber, nOfRutees=$nOfRutees  cmd=${cmd}")
-//        while (cmd != null && commandsLaunchedNumber < nOfRutees) {
-//            cmdActor.tell( cmd, self() )
-//            cmd = getNextCommand()
-//        }
-//        checkIfDone()
     }
 
     private fun checkIfDone() {
-        log().warning("[checkIfDone] commandsLaunchedNumber=$commandsLaunchedNumber, lineNumber=$lineNumber, planLines.size=${planLines.size}")
+        log().debug("[checkIfDone] commandsLaunchedNumber=$commandsLaunchedNumber, lineNumber=$lineNumber, planLines.size=${planLines.size}")
         if (commandsLaunchedNumber == 0 && lineNumber >= planLines.size) {
             listener.tell( Done("OK"), self() )
         }
@@ -152,7 +144,7 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
         } catch (t: Throwable) {
             UnrecognizedCmd(lineNumber, line.startsWith("err"), t)
         }
-        log().warning(line + " ::: " + cmd)
+        log().debug(line + " ::: " + cmd)
         return cmd
     }
 

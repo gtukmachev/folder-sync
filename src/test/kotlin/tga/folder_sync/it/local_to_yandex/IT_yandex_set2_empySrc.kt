@@ -1,15 +1,16 @@
-package tga.folder_sync.it.local_to_local
+package tga.folder_sync.it.local_to_yandex
 
 import tga.folder_sync.it.AbstractItTest
 import tga.folder_sync.it.localFolderStructure
+import tga.folder_sync.it.yandexFolderStructure
 
 
-class IT_set2_empySrc : AbstractItTest() {
+class IT_yandex_set2_empySrc : AbstractItTest() {
 
     override fun prepareSource() = localFolderStructure("tests-set2/src")
 
     override fun prepareDestination() =
-        localFolderStructure("tests-set2/dst") {
+        yandexFolderStructure("tests-set2/dst") {
             Txt("file0")
             Fld("sub-1") {
                 Fld("sub-1-1") { Txt("file-1-1.01") }
