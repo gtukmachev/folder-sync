@@ -67,7 +67,7 @@ abstract class SyncCmd(
         return res
     }
 
-    override fun toString() = "${this::class.simpleName}(lineNumber=$lineNumber, completed=$completed, fileSize=$fileSize)"
+    override fun toString() = "${this::class.simpleName}(lineNumber=$lineNumber, fileName='$fileName', completed=$completed, fileSize=$fileSize)"
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is SyncCmd) return false

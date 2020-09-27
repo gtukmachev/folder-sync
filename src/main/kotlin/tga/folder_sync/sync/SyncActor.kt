@@ -29,16 +29,16 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
     var srcRoot: String? = null
     var dstRoot: String? = null
 
-    val nOfRutees = 2
+    val nOfRutees = 3
 
-    var restOfResults: Int = 0
+    var commandsLaunchedNumber: Int = 0
     var errCount: Int = 0
 
     lateinit var listener: ActorRef
 
     override fun createReceive() = ReceiveBuilder()
         .match(Perform::class.java           ) { listener = sender(); raiseNextCommands() }
-        .match(ReportActor.Done::class.java  ) { raiseNextCommands(); checkIfDone() }
+        .match(ReportActor.Done::class.java  ) { commandsLaunchedNumber--; checkIfDone(); raiseNextCommands(); }
         .build()
 
     private val strategy = OneForOneStrategy( 10, Duration.ofSeconds(60),
@@ -51,10 +51,10 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
 
     private fun handleErr(err: Throwable) {
         errCount ++
-        restOfResults --
+        commandsLaunchedNumber --
+        checkIfDone()
         log().error("Unknown $errCount error in cmdActor", err)
         raiseNextCommands()
-        checkIfDone()
     }
 
     override fun preStart() {
@@ -76,22 +76,35 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
         lineNumber = 0
         srcRoot = null
         dstRoot = null
-        restOfResults = 0
+//        commandsLounchedNumber = 0
         errCount = 0
     }
 
     fun raiseNextCommands() {
-        var cmd = getNextCommand()
-        while (cmd != null && restOfResults < nOfRutees) {
-            restOfResults++
+        val cmd = getNextCommand()
+        log().warning("[raiseNextCommands] commandsLaunchedNumber=$commandsLaunchedNumber, nOfRutees=$nOfRutees  cmd=${cmd}")
+
+        if (cmd != null) {
+            commandsLaunchedNumber++
             cmdActor.tell( cmd, self() )
-            cmd = getNextCommand()
+
+            if (commandsLaunchedNumber < nOfRutees) raiseNextCommands()
         }
+//
+//
+//        log().warning("[raiseNextCommands] commandsLaunchedNumber=$commandsLaunchedNumber, nOfRutees=$nOfRutees  cmd=${cmd}")
+//        while (cmd != null && commandsLaunchedNumber < nOfRutees) {
+//            cmdActor.tell( cmd, self() )
+//            cmd = getNextCommand()
+//        }
+//        checkIfDone()
     }
 
     private fun checkIfDone() {
-        restOfResults--
-        if (restOfResults == 0) listener.tell( Done("OK"), self() )
+        log().warning("[checkIfDone] commandsLaunchedNumber=$commandsLaunchedNumber, lineNumber=$lineNumber, planLines.size=${planLines.size}")
+        if (commandsLaunchedNumber == 0 && lineNumber >= planLines.size) {
+            listener.tell( Done("OK"), self() )
+        }
     }
 
     private fun getSession(sessionArg: String?): File? {
@@ -139,6 +152,7 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
         } catch (t: Throwable) {
             UnrecognizedCmd(lineNumber, line.startsWith("err"), t)
         }
+        log().warning(line + " ::: " + cmd)
         return cmd
     }
 
