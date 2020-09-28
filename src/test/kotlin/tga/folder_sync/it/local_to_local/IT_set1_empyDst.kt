@@ -11,7 +11,7 @@ import tga.folder_sync.it.foldersShouldBeTheSame
 import tga.folder_sync.it.localFolderStructure
 import tga.folder_sync.it.localRootFolder
 import tga.folder_sync.params.Parameters
-import tga.folder_sync.sync.SyncActor
+import tga.folder_sync.sync.SyncCoordinatorActor
 import java.io.File
 import java.util.*
 import kotlin.test.assertTrue
@@ -120,12 +120,12 @@ class IT_set1_empyDst : AbstractItTest() {
 
                 val syncActor = system.actorOf(
                     Props.create(
-                    SyncActor::class.java,
+                    SyncCoordinatorActor::class.java,
                     initResult.outDir
                 ), "syncActor")
 
-                syncActor.tell( SyncActor.Perform(), ref )
-                expectMsgClass( 10.sec(), SyncActor.Done::class.java )
+                syncActor.tell( SyncCoordinatorActor.Go(ref), ref )
+                expectMsgClass( 10.sec(), SyncCoordinatorActor.Done::class.java )
 
                 for (f in exclusions ) {
                     val folder = File("$localRootFolder/tests-set1/src/$f")

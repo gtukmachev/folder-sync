@@ -9,6 +9,8 @@ import tga.folder_sync.files.SFile
 /**
  * Created by grigory@clearscale.net on 2/25/2019.
  */
+typealias inFilter = (String) -> Boolean
+
 abstract class SyncCmd(
     val lineNumber: Int,
     var completed: Boolean,
@@ -21,8 +23,12 @@ abstract class SyncCmd(
     companion object {
         val log: Logger = LoggerFactory.getLogger("tga.folder_sync.sync.SyncCmd")
 
-        fun makeCommand(commandLine: String, lineNumber: Int, srcRoot: String?, dstRoot: String?): SyncCmd {
+        fun makeCommand(commandLine: String, lineNumber: Int, srcRoot: String?, dstRoot: String?, incomeLinesFilter: inFilter? ): SyncCmd {
             if (commandLine.trim().startsWith("#")) return SkipCmd(lineNumber) //isComment
+            if (incomeLinesFilter != null) {
+                val check = incomeLinesFilter(commandLine)
+                if (!check) return SkipCmd(lineNumber)
+            }
 
             if (srcRoot == null) throw RuntimeException("Wrong plan file format: 'source folder' field not found")
             if (dstRoot == null) throw RuntimeException("Wrong plan file format: 'destination folder' field not found")

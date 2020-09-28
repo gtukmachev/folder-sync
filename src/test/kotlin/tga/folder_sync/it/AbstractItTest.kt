@@ -9,7 +9,7 @@ import org.junit.Before
 import org.junit.Test
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.params.Parameters
-import tga.folder_sync.sync.SyncActor
+import tga.folder_sync.sync.SyncCoordinatorActor
 import java.text.SimpleDateFormat
 import java.time.Duration
 import java.util.*
@@ -69,12 +69,12 @@ abstract class AbstractItTest {
                 }
 
                 val syncActor = system.actorOf(Props.create(
-                    SyncActor::class.java,
+                    SyncCoordinatorActor::class.java,
                     initResult.outDir
                 ), "syncActor")
 
-                syncActor.tell( SyncActor.Perform(), ref )
-                expectMsgClass( testMaxDuration(), SyncActor.Done::class.java )
+                syncActor.tell( SyncCoordinatorActor.Go(ref), ref )
+                expectMsgClass( testMaxDuration(), SyncCoordinatorActor.Done::class.java )
 
                 foldersShouldBeTheSame(sourceFolderName, destinationFolderName)
             }

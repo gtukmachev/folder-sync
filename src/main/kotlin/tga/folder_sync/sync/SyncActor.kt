@@ -16,9 +16,14 @@ import java.time.Duration
 /**
  * Created by grigory@clearscale.net on 2/25/2019.
  */
+class SyncActor(
+    private val sessionFolderArg: String?,
+    private val nOfRoutes: Int,
+    private val incomeLinesFilter: inFilter?
+) : AbstractLoggingActor() {
 
-
-class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
+    class Perform
+    data class Done(val result: String) //TODO : the "result" field should be not a simple string, but a statistic object
 
     lateinit var planFile: File
     lateinit var planLines: Array<String>
@@ -29,16 +34,14 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
     var srcRoot: String? = null
     var dstRoot: String? = null
 
-    val nOfRutees = 1
-
     var commandsLaunchedNumber: Int = 0
     var errCount: Int = 0
 
     lateinit var listener: ActorRef
 
     override fun createReceive() = ReceiveBuilder()
-        .match(Perform::class.java           ) { listener = sender(); raiseNextCommands() }
-        .match(ReportActor.Done::class.java  ) { commandsLaunchedNumber--; checkIfDone(); raiseNextCommands(); }
+        .match(Perform::class.java           ) { listener = sender();                     raiseNextCommands(); checkIfDone() }
+        .match(ReportActor.Done::class.java  ) { commandsLaunchedNumber--; checkIfDone(); raiseNextCommands(); checkIfDone() }
         .build()
 
     private val strategy = OneForOneStrategy( 10, Duration.ofSeconds(60),
@@ -67,7 +70,7 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
 
         reportActor = context.actorOf( Props.create(ReportActor::class.java, planFile, planLines, self()), "reportActor" )
         cmdActor = context.actorOf(
-                RoundRobinPool(nOfRutees).props(
+                RoundRobinPool(nOfRoutes).props(
                     Props.create(CmdActor::class.java, reportActor)
                 )
                 , "cmdRouter"
@@ -82,13 +85,13 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
 
     fun raiseNextCommands() {
         val cmd = getNextCommand()
-        log().debug("[raiseNextCommands] commandsLaunchedNumber=$commandsLaunchedNumber, nOfRutees=$nOfRutees  cmd=${cmd}")
+        log().debug("[raiseNextCommands] commandsLaunchedNumber=$commandsLaunchedNumber, nOfRutees=$nOfRoutes  cmd=${cmd}")
 
         if (cmd != null) {
             commandsLaunchedNumber++
             cmdActor.tell( cmd, self() )
 
-            if (commandsLaunchedNumber < nOfRutees) raiseNextCommands()
+            if (commandsLaunchedNumber < nOfRoutes) raiseNextCommands()
         }
     }
 
@@ -140,16 +143,13 @@ class SyncActor(val sessionFolderArg: String?) : AbstractLoggingActor() {
         if (line.startsWith("#  -      source folder:")) srcRoot = line.split(": ").get(1)
         if (line.startsWith("#  - destination folder:")) dstRoot = line.split(": ").get(1)
         val cmd = try {
-            SyncCmd.makeCommand(line, lineNumber, srcRoot, dstRoot)
+            SyncCmd.makeCommand(line, lineNumber, srcRoot, dstRoot, incomeLinesFilter)
         } catch (t: Throwable) {
             UnrecognizedCmd(lineNumber, line.startsWith("err"), t)
         }
         log().debug(line + " ::: " + cmd)
         return cmd
     }
-
-    class Perform
-    data class Done(val result: String)
 
 }
 

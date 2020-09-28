@@ -7,7 +7,7 @@ import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.params.Parameters
-import tga.folder_sync.sync.SyncActor
+import tga.folder_sync.sync.SyncCoordinatorActor
 import java.util.*
 
 fun main(vararg args: String) {
@@ -21,6 +21,7 @@ fun main(vararg args: String) {
 class MainActor : AbstractLoggingActor() {
 
     lateinit var params: Parameters
+    private lateinit var syncActor: ActorRef
 
     override fun createReceive() = ReceiveBuilder()
          // A command to start the program
@@ -29,8 +30,8 @@ class MainActor : AbstractLoggingActor() {
         .match(Start::class.java                         ) { printHelp(); shutdownProgram() }
 
         // A command to finish the program (the job's done)
-        .match(InitActor.Done::class.java) { shutdownProgram() }
-        .match(SyncActor.Done::class.java) { shutdownProgram() }
+        .match(InitActor.Done::class.java            ) { m -> printInitResults(m); shutdownProgram() }
+        .match(SyncCoordinatorActor.Done::class.java ) { m -> printSyncResults(m); shutdownProgram() }
 
         .build()
 
@@ -90,10 +91,6 @@ class MainActor : AbstractLoggingActor() {
         """.trimIndent())
     }
 
-    private fun shutdownProgram() {
-        context.system.terminate()
-    }
-
     fun init() {
         val initActor = context.actorOf( Props.create (
             InitActor::class.java,
@@ -104,8 +101,19 @@ class MainActor : AbstractLoggingActor() {
     }
 
     fun sync() {
-        val syncActor = context.actorOf( Props.create(SyncActor::class.java, params.sessionFolder) )
-        syncActor.tell( SyncActor.Perform(), self() )
+        syncActor = context.actorOf( Props.create(SyncCoordinatorActor::class.java, params.sessionFolder) )
+        syncActor.tell( SyncCoordinatorActor.Go(self()) , self() )
+    }
+
+    private fun printSyncResults(results: SyncCoordinatorActor.Done) {
+        println(results)
+    }
+    private fun printInitResults(results: InitActor.Done) {
+        println(results)
+    }
+
+    private fun shutdownProgram() {
+        context.system.terminate()
     }
 
     data class Start(val params: Parameters)
