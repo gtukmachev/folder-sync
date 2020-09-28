@@ -27,7 +27,7 @@ abstract class SFile : Comparable<SFile> {
          this.isDirectory && !other.isDirectory ->  1
         !this.isDirectory &&  other.isDirectory -> -1
          else -> this.name.compareTo( other.name, ignoreCase = true )
-        // todo: Add comparing of file size, file modification date
+        // todo: Add comparing of file size, file modification date, file checksumm
     }
 
     override fun toString() = path

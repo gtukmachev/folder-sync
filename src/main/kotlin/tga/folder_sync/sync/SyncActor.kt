@@ -6,7 +6,7 @@ import akka.actor.OneForOneStrategy
 import akka.actor.Props
 import akka.japi.pf.DeciderBuilder
 import akka.japi.pf.ReceiveBuilder
-import akka.routing.RoundRobinPool
+import akka.routing.SmallestMailboxPool
 import tga.folder_sync.exts.Resume
 import java.io.File
 import java.text.SimpleDateFormat
@@ -70,7 +70,7 @@ class SyncActor(
 
         reportActor = context.actorOf( Props.create(ReportActor::class.java, planFile, planLines, self()), "reportActor" )
         cmdActor = context.actorOf(
-                RoundRobinPool(nOfRoutes).props(
+                SmallestMailboxPool(nOfRoutes).props(
                     Props.create(CmdActor::class.java, reportActor)
                 )
                 , "cmdRouter"

@@ -70,7 +70,8 @@ abstract class AbstractItTest {
 
                 val syncActor = system.actorOf(Props.create(
                     SyncCoordinatorActor::class.java,
-                    initResult.outDir
+                    initResult.outDir,
+                    3
                 ), "syncActor")
 
                 syncActor.tell( SyncCoordinatorActor.Go(ref), ref )

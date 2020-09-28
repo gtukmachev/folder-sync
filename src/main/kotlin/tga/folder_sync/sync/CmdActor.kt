@@ -11,7 +11,7 @@ class CmdActor(val reportActor: ActorRef) : AbstractLoggingActor() {
         .build()
 
     private fun handleCommand(cmd: SyncCmd) {
-        log().info(" -> {}", cmd)
+        log().debug(" -> {}", cmd)
         var result: SyncCmd = cmd
         var err: Throwable? = null
 
@@ -22,7 +22,7 @@ class CmdActor(val reportActor: ActorRef) : AbstractLoggingActor() {
             err = e
         }
 
-        log().info(" <- {}", cmd)
+        log().debug(" <- {}", cmd)
         reportActor.tell( ReportActor.Done(result, err), self() )
     }
 

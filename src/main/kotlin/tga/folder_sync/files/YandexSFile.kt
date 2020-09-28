@@ -1,6 +1,8 @@
 package tga.folder_sync.files
 
 import com.google.gson.Gson
+import com.squareup.okhttp.ConnectionPool
+import com.squareup.okhttp.OkHttpClient
 import com.yandex.disk.rest.Credentials
 import com.yandex.disk.rest.ProgressListener
 import com.yandex.disk.rest.ResourcesArgs
@@ -9,6 +11,7 @@ import com.yandex.disk.rest.exceptions.http.HttpCodeException
 import com.yandex.disk.rest.json.Resource
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by grigory@clearscale.net on 2/21/2019.
@@ -18,7 +21,7 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
     companion object {
         val log: Logger = LoggerFactory.getLogger(YandexSFile::class.java)
         val credentials: Credentials = Credentials(System.getProperty("user"), System.getProperty("token"))
-        val yandex: RestClient = RestClient(credentials)
+        val yandex: RestClient = RestClient(credentials, makeClient() )
 
         fun loadFromYandex(path: String): Resource {
             val req = ResourcesArgs.Builder()
@@ -67,6 +70,30 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         }
 
         fun get(path: String) = YandexSFile(loadFromYandex(path))
+
+        fun makeClient(): OkHttpClient {
+            val CONNECT_TIMEOUT_MILLIS = 10 * 1000L
+            val READ_TIMEOUT_MILLIS = 300 * 1000L
+            val WRITE_TIMEOUT_MILLIS = 300 * 1000L
+
+            val client = OkHttpClient()
+
+            client.setConnectTimeout(CONNECT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+            client.setReadTimeout(READ_TIMEOUT_MILLIS,       TimeUnit.MILLISECONDS)
+            client.setWriteTimeout(WRITE_TIMEOUT_MILLIS,     TimeUnit.MILLISECONDS)
+            client.setConnectionPool(makeConnectionPool())
+            client.dispatcher
+
+            client.followSslRedirects = true
+            client.followRedirects = true
+            return client
+        }
+
+        fun makeConnectionPool(): ConnectionPool {
+            val cp = ConnectionPool(30, 5 * 60 * 1000L)
+            return cp
+        }
+
     }
 
     override fun relativeTo(base: SFile): String {
@@ -112,7 +139,7 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         val uploadLink = yandex.getUploadLink(this.yandexFile.path.path, true)
         yandex.uploadFile(
             uploadLink, true, srcFile.file, uploadProgressListener()
-        )
+            )
     }
 
     override fun mkFolder() {
