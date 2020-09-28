@@ -23,6 +23,7 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         fun loadFromYandex(path: String): Resource {
             val req = ResourcesArgs.Builder()
                 .setPath(path)
+                .setLimit(10_000)
                 .build()
             return try {
                     yandex.getResources(req)
