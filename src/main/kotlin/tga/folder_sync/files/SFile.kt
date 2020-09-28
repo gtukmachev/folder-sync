@@ -44,14 +44,9 @@ abstract class SFile : Comparable<SFile> {
 
         val root: Tree<SFile> = Tree(this, null)
         var timer = System.currentTimeMillis()
-        var counter = 0
+        var filesCounter = 0
 
         fun addChildren(node: Tree<SFile>) {
-            counter++
-            if (counter % 1000 == 0 || (System.currentTimeMillis() - timer) > 1000) {
-                println("    $counter files scanned")
-                timer = System.currentTimeMillis()
-            }
 
             val subfolders = node.obj.children()
             if (ordered) subfolders.sorted()
@@ -59,11 +54,18 @@ abstract class SFile : Comparable<SFile> {
             subfolders.forEach {
                 val subNode = Tree(it, node)
                 node.children.add(subNode)
+                filesCounter++
+                if (filesCounter % 100 == 0 || (System.currentTimeMillis() - timer) > 1000) {
+                    println("    $filesCounter files scanned")
+                    timer = System.currentTimeMillis()
+                }
                 if (it.isDirectory) addChildren(subNode)
             }
         }
 
+        println(" ${root.obj.protocol}${root.obj.absolutePath} scanning:")
         addChildren(root)
+        println("    $filesCounter files scanned")
 
         return root
     }

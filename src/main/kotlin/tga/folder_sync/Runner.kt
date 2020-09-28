@@ -46,9 +46,13 @@ class MainActor : AbstractLoggingActor() {
             The utility allows you to backup your files to a cloud or another disk in a smart safty way.
             
             Syntax:
-            $>java -jar folder-sync.jar [<command> [<session-folder>] [<source folder> <destination folder>] [login=<login> pass=<pass>]]
+            $>java -jar [<flags>] folder-sync.jar [<command> [<session-folder>] [<source folder> <destination folder>] [login=<login> pass=<pass>]]
 
                 in case of running WITHOUT parameters, the command will be = `init`
+                
+                <flags>
+                   -DcopyThreads=3
+                         how many files copy in parallel (here the 3 value is a default one)
                 
                 <command> = { init | sync }
                     init - To compare source and destination directory and create synchronization plan.
@@ -101,7 +105,9 @@ class MainActor : AbstractLoggingActor() {
     }
 
     fun sync() {
-        syncActor = context.actorOf( Props.create(SyncCoordinatorActor::class.java, params.sessionFolder) )
+        val copyThreads: Int = System.getProperty("copyThreads")?.toInt() ?: 3
+
+        syncActor = context.actorOf( Props.create(SyncCoordinatorActor::class.java, params.sessionFolder, copyThreads) )
         syncActor.tell( SyncCoordinatorActor.Go(self()) , self() )
     }
 

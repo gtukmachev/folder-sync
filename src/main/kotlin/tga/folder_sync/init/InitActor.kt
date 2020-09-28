@@ -48,8 +48,11 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
         val commands = srcTree!!.buildTreeSyncCommands(dstTree!!)
 
         val outDir: String = params.outDir + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(timestamp)
+
         log().info("\nplan printing to: $outDir/plan.txt")
-        printCommands(outDir, commands, srcTree!!.obj, dstTree!!.obj)
+        val planHead = printCommands(outDir, commands, srcTree!!.obj, dstTree!!.obj)
+
+        println(planHead)
 
         resultListener!!.tell(Done(outDir), self())
     }
@@ -78,11 +81,13 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
         }
     }
 
-    private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, srcFolder: SFile, dstFolder: SFile) {
+    private fun printCommands(outDir: String, commands: TreeSyncCommands<SFile>, srcFolder: SFile, dstFolder: SFile): String {
         val folder = File(outDir)
         if (!folder.exists()) folder.mkdir()
 
-        File("$outDir/plan.txt").printWriter().use { out ->
+        var header = ""
+
+            File("$outDir/plan.txt").printWriter().use { out ->
 
             val  sizeToAdd    = commands.toAdd   .fold(0L){prev, el -> prev + el.sum{ it.obj.size } }
             val countToAdd    = commands.toAdd   .fold(0L){prev, el -> prev + el.sum{ 1           } }
@@ -92,13 +97,16 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
             val countTotal = countToAdd + countToRemove
             val  sizeTotal =  sizeToAdd + sizeToRemove
 
-            out.println("# A sync-session plan file")
-            out.println("#  - session planned at: ${SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z").format(timestamp)}")
-            out.println("#  -      source folder: ${srcFolder.protocol}${srcFolder.absolutePath}")
-            out.println("#  - destination folder: ${dstFolder.protocol}${dstFolder.absolutePath}")
-            out.println("#")
-            out.println("#   total commands to run: ${countTotal.pL()}")
-            out.println("#        total bytes sync: ${sizeTotal.pL()}")
+            header =
+                "# A sync-session plan file\n" +
+                "#  - session planned at: ${SimpleDateFormat("yyyy.MM.dd 'at' HH:mm:ss z").format(timestamp)}\n" +
+                "#  -      source folder: ${srcFolder.protocol}${srcFolder.absolutePath}\n" +
+                "#  - destination folder: ${dstFolder.protocol}${dstFolder.absolutePath}\n" +
+                "#\n" +
+                "#   total commands to run: ${countTotal.pL()}\n" +
+                "#        total bytes sync: ${sizeTotal.pL()}\n"
+
+            out.println(header)
             out.println("#")
 
             for (srcTreeNode in commands.toAdd) {
@@ -128,11 +136,12 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
 
         }
 
+        return header
     }
-
 
     data class Perform(val resultsListener: ActorRef)
     data class Done(val outDir:String)
+
 }
 
 

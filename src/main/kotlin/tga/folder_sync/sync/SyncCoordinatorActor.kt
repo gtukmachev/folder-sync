@@ -6,7 +6,8 @@ import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
 
 class SyncCoordinatorActor(
-    val sessionFolderArg: String?
+    val sessionFolderArg: String?,
+    val copyThreads: Int
 ) : AbstractLoggingActor() {
 
     data class Go(val listerner: ActorRef)
@@ -29,6 +30,12 @@ class SyncCoordinatorActor(
         .match(SyncActor.Done::class.java, {_ -> sender() == syncActorPhase2}) { m -> resultsPhase2 = m;       done()       }
         .build()
 
+    /**
+     * ### Phase 1:
+     *
+     * Make all required folders without parallelism
+     * to avoid the situation when we create subfolder before it's parent was not committed yet.
+     */
     private fun syncPhase1() {
         syncActorPhase1 = context.actorOf( Props.create(
             SyncActor::class.java, // sessionFolderArg
@@ -39,12 +46,19 @@ class SyncCoordinatorActor(
         syncActorPhase1.tell( SyncActor.Perform(), self() )
     }
 
+    /**
+     * ### Phase 2:
+     *
+     * @see syncActorPhase1
+     *
+     * Copy and delete files in multi-treads mode
+     */
     private fun syncPhase2() {
         context().stop(syncActorPhase1)
         syncActorPhase2 = context.actorOf( Props.create(
             SyncActor::class.java,
             sessionFolderArg, // sessionFolderArg
-            10,                // nOfRoutes
+            copyThreads,      // nOfRoutes
             null              // incomeLinesFilter - no filter, because, on the phase 1, all commands "mk <folder>" waere done
         ))
         syncActorPhase2.tell( SyncActor.Perform(), self() )
