@@ -104,7 +104,7 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
                 "#  - destination folder: ${dstFolder.protocol}${dstFolder.absolutePath}\n" +
                 "#\n" +
                 "#   total commands to run: ${countTotal.pL()}\n" +
-                "#        total bytes sync: ${sizeTotal.pL()}\n"
+                "#        total bytes sync: ${sizeTotal.pL()}"
 
             out.println(header)
             out.println("#")

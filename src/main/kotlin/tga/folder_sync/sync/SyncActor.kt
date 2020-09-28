@@ -98,6 +98,7 @@ class SyncActor(
     private fun checkIfDone() {
         log().debug("[checkIfDone] commandsLaunchedNumber=$commandsLaunchedNumber, lineNumber=$lineNumber, planLines.size=${planLines.size}")
         if (commandsLaunchedNumber == 0 && lineNumber >= planLines.size) {
+            reportActor.tell( ReportActor.Flush(), self() )
             listener.tell( Done("OK"), self() )
         }
     }

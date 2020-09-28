@@ -8,10 +8,15 @@ import java.io.File
 
 class ReportActor(val planFile: File, val planLines: Array<String>, val resultListener: ActorRef) : AbstractLoggingActor() {
 
+    var linesNotPosted = 0
+    var lastTimePosted = 0L
+
     data class Done(val cmd: SyncCmd, val err: Throwable?)
+    class Flush
 
     override fun createReceive(): Receive = ReceiveBuilder()
         .match(Done::class.java){ report(it) }
+        .match(Flush::class.java){ saveFile(System.currentTimeMillis()) }
         .build()
 
     private fun report(result: Done) {
@@ -23,13 +28,20 @@ class ReportActor(val planFile: File, val planLines: Array<String>, val resultLi
                                      else -> " + " + planLines[LN].substring(3)
         }
         planLines[LN] = result_
-        saveFile()
+
+        linesNotPosted++
+        val now = System.currentTimeMillis()
+        if (linesNotPosted >= 100 || now - lastTimePosted > 10_000) { //every 10 sec
+            saveFile(now)
+        }
 
         resultListener.tell(result, self())
     }
 
-    private fun saveFile() {
+    private fun saveFile(now: Long) {
         planFile.printWriter().use {out -> planLines.forEach(out::println)}
+        linesNotPosted = 0
+        lastTimePosted = now
     }
 
 }
