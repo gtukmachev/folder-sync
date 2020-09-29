@@ -3,7 +3,7 @@
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <charset>UTF-8</charset>
-            <outputPatternAsHeader>true</outputPatternAsHeader>
+            <outputPatternAsHeader>false</outputPatternAsHeader>
             <pattern>%highlight(%-5level) %boldYellow(:) [%blue(%d{HH:mm:ss.SSS})] [%cyan(%thread)] %boldYellow(:) %msg%n</pattern>
         </encoder>
     </appender>
