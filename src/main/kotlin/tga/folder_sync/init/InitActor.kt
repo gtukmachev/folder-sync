@@ -3,7 +3,11 @@ package tga.folder_sync.init
 
 import akka.actor.AbstractLoggingActor
 import akka.actor.ActorRef
+import akka.actor.Cancellable
 import akka.japi.pf.ReceiveBuilder
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import tga.folder_sync.exts.sec
 import tga.folder_sync.files.FoldersFactory
 import tga.folder_sync.files.SFile
 import tga.folder_sync.pL
@@ -20,31 +24,61 @@ import java.util.*
 
 class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingActor() {
 
+    val logger: Logger = LoggerFactory.getLogger("tga.folder_sync.init.InitActor")
+
     var srcTree: Tree<SFile>? = null
     var dstTree: Tree<SFile>? = null
 
     var resultListener: ActorRef? = null
     val taskTypes = mutableMapOf<String, String>()
 
+    var srcScanned = 0
+    var dstScanned = 0
+
+    lateinit var printStatisticJob: Cancellable
+
     companion object {
         val pL1 = 1L.pL()
     }
 
     override fun createReceive() = ReceiveBuilder()
-        .match(Perform::class.java            ) { initiateFoldersLoading() }
-        .match(ScannerActor.Loaded::class.java) { handleLoadedResponse(it) }
+        .match(Perform::class.java               ) { initiateFoldersLoading() }
+        .match(ScannerActor.Loaded::class.java   ) { handleLoadedResponse(it) }
+        .match(ScannerActor.Statistic::class.java) { handleStatistic(it) }
+        .match(PrintStat::class.java             ) { printStatistic("Scanning:") }
+
         .build()
 
-    private fun handleLoadedResponse(loadedResponse: ScannerActor.Loaded) {
-        val rootFolder = loadedResponse.node.obj
+    private fun printStatistic(title: String) {
+        logger.info(title)
+        logger.info("  src: $srcScanned files and folders")
+        logger.info("  dst: $dstScanned files and folders")
+    }
+
+    private fun getTaskType(node: Tree<SFile>): String {
+        val rootFolder = node.obj
         val taskKey = rootFolder.protocol + rootFolder.path
         val taskType = taskTypes[taskKey]!!
+        return taskType
+    }
 
+    private fun handleStatistic(stat: ScannerActor.Statistic) {
+        var node = stat.node
+        while (node.parent != null) node = node.parent!!
+
+        val taskType = getTaskType(node)
+        when (taskType) {
+            "src" -> srcScanned += stat.itemsScanned
+            "dst" -> dstScanned += stat.itemsScanned
+        }
+    }
+
+    private fun handleLoadedResponse(loadedResponse: ScannerActor.Loaded) {
+        val taskType = getTaskType(loadedResponse.node)
         when (taskType) {
             "src" -> srcTree = loadedResponse.node
             "dst" -> dstTree = loadedResponse.node
         }
-
         tryCompareTrees()
     }
 
@@ -59,16 +93,18 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
             println("")
         }
 */
+        printStatisticJob.cancel()
 
-        log().info("\nFiles comparing...")
+        printStatistic("Files comparing...")
+
         val commands = srcTree!!.buildTreeSyncCommands(dstTree!!)
 
         val outDir: String = params.outDir + SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss").format(timestamp)
 
-        log().info("\nplan printing to: $outDir/plan.txt")
+        logger.info("plan printing to: $outDir/plan.txt")
         val planHead = printCommands(outDir, commands, srcTree!!.obj, dstTree!!.obj)
 
-        println(planHead)
+        logger.info("\n$planHead")
 
         resultListener!!.tell(Done(outDir), self())
     }
@@ -79,12 +115,17 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
         val source = params.src
         val destination = params.dst
 
-        log().info("New sync-session preparing started.")
-        log().info("    source: $source")
-        log().info("    destination: $destination")
+        logger.info("New sync-session preparing started.")
+        logger.info("    source: $source")
+        logger.info("    destination: $destination")
+
+        printStatisticJob = context.system.scheduler.scheduleAtFixedRate(
+            1.sec(), 5.sec(), self(), PrintStat(), context.dispatcher, self()
+        )
 
         requestScan(source, "src")
         requestScan(destination, "dst")
+
     }
 
     private fun requestScan(folderName: String, taskType: String) {
@@ -97,7 +138,7 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
         val props = ScannerActorFactory.props(rootFolderNode)
         val scannerActor = context.actorOf( props )
 
-        val request = ScannerActor.Load(rootFolderNode, self())
+        val request = ScannerActor.Load(rootFolderNode, self(), self())
         scannerActor.tell( request, self() )
     }
 
@@ -169,6 +210,8 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
 
     data class Perform(val resultsListener: ActorRef)
     data class Done(val outDir:String)
+
+    class PrintStat
 
 }
 

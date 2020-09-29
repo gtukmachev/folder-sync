@@ -24,7 +24,14 @@ class ScannerActor : AbstractLoggingActor() {
     override fun createReceive() = ReceiveBuilder()
             .match(Load::class.java) { request = it; scan() }
             .match(Loaded::class.java) { handleSubFolderResponse(it) }
+//            .match(Statistic::class.java) { handleStatistic(it) }
         .build()
+
+/*
+    private fun handleStatistic(stat: Statistic) {
+        request.requester.tell( Statistic(request.node, stat.itemsScanned), self() )
+    }
+*/
 
     private fun scan() {
         val root = request.node
@@ -40,14 +47,16 @@ class ScannerActor : AbstractLoggingActor() {
             if (sFile.isDirectory) requestSubfolderScan( subNode )
         }
 
-         tryRespond()
+        request.statisticListener.tell( Statistic(request.node, subFolders.size), self() )
+
+        tryRespond()
     }
 
     private fun requestSubfolderScan(subFolderNode: Tree<SFile>) {
         val props = ScannerActorFactory.props(subFolderNode)
         val scannerActor = context.actorOf( props )
 
-        val task = Load(subFolderNode, self())
+        val task = Load(subFolderNode, self(), request.statisticListener)
         tasks += scannerActor
         scannerActor.tell( task, self() )
     }
@@ -67,7 +76,8 @@ class ScannerActor : AbstractLoggingActor() {
         request.requester.tell(response, self())
     }
 
-    data class Load(val node: Tree<SFile>, val requester: ActorRef)
+    data class Load(val node: Tree<SFile>, val requester: ActorRef, val statisticListener: ActorRef)
     data class Loaded(val node: Tree<SFile>, val worker: ActorRef)
+    data class Statistic(val node: Tree<SFile>, val itemsScanned: Int)
 }
 
