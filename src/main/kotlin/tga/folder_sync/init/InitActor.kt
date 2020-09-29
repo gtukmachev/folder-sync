@@ -3,8 +3,8 @@ package tga.folder_sync.init
 
 import akka.actor.AbstractLoggingActor
 import akka.actor.ActorRef
-import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
+import tga.folder_sync.files.FoldersFactory
 import tga.folder_sync.files.SFile
 import tga.folder_sync.pL
 import tga.folder_sync.params.Parameters
@@ -24,25 +24,41 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
     var dstTree: Tree<SFile>? = null
 
     var resultListener: ActorRef? = null
+    val taskTypes = mutableMapOf<String, String>()
 
     companion object {
         val pL1 = 1L.pL()
     }
 
     override fun createReceive() = ReceiveBuilder()
-        .match(Perform::class.java                       ) { initiateFoldersLoading() }
-        .match(BuildTreeActor.SourceTree::class.java     ) { srcTree = it.tree; tryCompareTrees(); }
-        .match(BuildTreeActor.DestinationTree::class.java) { dstTree = it.tree; tryCompareTrees(); }
+        .match(Perform::class.java            ) { initiateFoldersLoading() }
+        .match(ScannerActor.Loaded::class.java) { handleLoadedResponse(it) }
         .build()
 
+    private fun handleLoadedResponse(loadedResponse: ScannerActor.Loaded) {
+        val rootFolder = loadedResponse.node.obj
+        val taskKey = rootFolder.protocol + rootFolder.path
+        val taskType = taskTypes[taskKey]!!
+
+        when (taskType) {
+            "src" -> srcTree = loadedResponse.node
+            "dst" -> dstTree = loadedResponse.node
+        }
+
+        tryCompareTrees()
+    }
+
     private fun tryCompareTrees() {
+
         if (dstTree == null || srcTree == null) return
 
+/*
         if (log().isDebugEnabled) {
             printTree("\nSource tree: ", srcTree!!)
             printTree("\nDestination tree: ", dstTree!!)
             println("")
         }
+*/
 
         log().info("\nFiles comparing...")
         val commands = srcTree!!.buildTreeSyncCommands(dstTree!!)
@@ -63,14 +79,26 @@ class InitActor(val timestamp: Date, val params: Parameters): AbstractLoggingAct
         val source = params.src
         val destination = params.dst
 
-        val buildTreeActor = context.actorOf(Props.create( BuildTreeActor::class.java ), "buildActor")
-
         log().info("New sync-session preparing started.")
         log().info("    source: $source")
         log().info("    destination: $destination")
 
-        buildTreeActor.tell( BuildTreeActor.Source(source),           self() )
-        buildTreeActor.tell( BuildTreeActor.Destination(destination), self() )
+        requestScan(source, "src")
+        requestScan(destination, "dst")
+    }
+
+    private fun requestScan(folderName: String, taskType: String) {
+        val rootFolder: SFile = FoldersFactory.create(folderName)
+        val taskKey = rootFolder.protocol + rootFolder.path
+        taskTypes[taskKey] = taskType
+
+        val rootFolderNode = Tree(rootFolder, null, mutableListOf())
+
+        val props = ScannerActorFactory.props(rootFolderNode)
+        val scannerActor = context.actorOf( props )
+
+        val request = ScannerActor.Load(rootFolderNode, self())
+        scannerActor.tell( request, self() )
     }
 
     private fun printTree(title: String, tree: Tree<SFile>) {
