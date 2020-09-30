@@ -24,22 +24,14 @@ class ScannerActor : AbstractLoggingActor() {
     override fun createReceive() = ReceiveBuilder()
             .match(Load::class.java) { request = it; scan() }
             .match(Loaded::class.java) { handleSubFolderResponse(it) }
-//            .match(Statistic::class.java) { handleStatistic(it) }
         .build()
-
-/*
-    private fun handleStatistic(stat: Statistic) {
-        request.requester.tell( Statistic(request.node, stat.itemsScanned), self() )
-    }
-*/
 
     private fun scan() {
         val root = request.node
         val rootFolder: SFile = request.node.obj
         log().debug("scan >>> $rootFolder")
 
-        val subFolders = rootFolder.children()
-        subFolders.sorted()
+        val subFolders = rootFolder.children().sorted()
 
         subFolders.forEach { sFile ->
             val subNode = Tree(sFile, root)
