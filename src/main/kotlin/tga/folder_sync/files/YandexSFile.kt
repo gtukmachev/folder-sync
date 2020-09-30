@@ -1,5 +1,6 @@
 package tga.folder_sync.files
 
+import akka.event.LoggingAdapter
 import com.google.gson.Gson
 import com.squareup.okhttp.ConnectionPool
 import com.squareup.okhttp.OkHttpClient
@@ -9,8 +10,7 @@ import com.yandex.disk.rest.ResourcesArgs
 import com.yandex.disk.rest.RestClient
 import com.yandex.disk.rest.exceptions.http.HttpCodeException
 import com.yandex.disk.rest.json.Resource
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import tga.folder_sync.exts.readableFileSize
 import java.util.concurrent.TimeUnit
 
 /**
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
 class YandexSFile(val yandexFile: Resource) : SFile() {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(YandexSFile::class.java)
+//        val log: Logger = LoggerFactory.getLogger(YandexSFile::class.java)
         val credentials: Credentials = Credentials(System.getProperty("user"), System.getProperty("token"))
         val yandex: RestClient = RestClient(credentials, makeClient() )
 
@@ -117,46 +117,35 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
     override fun children(): List<SFile> {
         if (!yandexFile.isDir) return emptyList()
 
-        var list: List<SFile>? = null
-        try {
-            val yandexResource = loadFromYandex(path)
-            list = yandexResource.resourceList
-                .items
-                .asSequence()
-                .map { YandexSFile(it) }
-                .toList();
-        } finally {
-            if (log.isTraceEnabled) {
-                log.trace("children '$path': ${list?.map{it.name}}")
-            }
-        }
+        val yandexResource = loadFromYandex(path)
+        val list: List<SFile> = yandexResource.resourceList
+            .items
+            .asSequence()
+            .map { YandexSFile(it) }
+            .toList();
 
-        return list!!
+        return list
     }
 
-    override fun copyToIt(srcFile: LocalSFile) {
-        log.trace("copy: ${srcFile.path} -> ${this.path}")
+    override fun copyToIt(srcFile: LocalSFile, logger: LoggingAdapter) {
         val uploadLink = yandex.getUploadLink(this.yandexFile.path.path, true)
         yandex.uploadFile(
-            uploadLink, true, srcFile.file, uploadProgressListener()
+            uploadLink, true, srcFile.file, uploadProgressListener(logger)
             )
     }
 
     override fun mkFolder() {
-        log.trace("mkFolder: $absolutePath")
         val makeResp = yandex.makeFolder( path )
         // todo: implement response handling
     }
 
     override fun removeFile() {
         val logPrefix = "delete: $absolutePath"
-        log.trace(logPrefix)
 
         val subTree = buildTree()
 
         subTree.deepFirstTravers{
             try {
-                if (log.isTraceEnabled) log.trace("$logPrefix > ${it.obj.absolutePath}")
                 yandex.delete(it.obj.path, false)
             } catch (e: HttpCodeException) {
                 when {
@@ -167,9 +156,11 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         }
     }
 
-    inner class uploadProgressListener : ProgressListener {
+    inner class uploadProgressListener(private val logger: LoggingAdapter) : ProgressListener {
         var lastOutput = 0L
-        override fun updateProgress(loaded: Long, total: Long) {
+        var readableTotalFileSize: String? = null
+
+            override fun updateProgress(loaded: Long, total: Long) {
             val nowMs = System.currentTimeMillis()
             if (
                 ( total == 0L      ) ||
@@ -181,8 +172,15 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         }
 
         private fun printStatus(loaded: Long, total: Long, nowMs: Long) {
-            val percent : Double = if (total == 0L) 100.0 else loaded.toDouble() / total.toDouble() * 100.0
-            log.info("uploading `$path` :: ${percent.toInt()}% ($loaded / $total) ")
+            if (loaded > 0) {
+                if (loaded == total) {
+                    logger.info("$path : 100% (${loaded.readableFileSize()}) ")
+                } else {
+                    if (readableTotalFileSize == null) readableTotalFileSize = total.readableFileSize()
+                    val percent: Double = if (total == 0L) 100.0 else loaded.toDouble() / total.toDouble() * 100.0
+                    logger.info("$path : ${percent.toInt()}% (${loaded.readableFileSize()} of $readableTotalFileSize) ")
+                }
+            }
             lastOutput = nowMs
         }
 

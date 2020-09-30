@@ -17,7 +17,7 @@ class CmdActor(val reportActor: ActorRef) : AbstractLoggingActor() {
 
         try {
             // if ( cmd.lineNumber.rem( 2 ) == 0 ) throw RuntimeException("Test error")
-            result = cmd.perform()
+            result = cmd.perform(log())
         } catch(e: Throwable) {
             err = e
         }

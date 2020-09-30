@@ -16,6 +16,7 @@ class SyncCoordinatorActor(
         val resultsPhase2: SyncActor.Done
     )
 
+    var phase2started = false
     lateinit var listener: ActorRef
 
     lateinit var syncActorPhase1: ActorRef
@@ -37,12 +38,13 @@ class SyncCoordinatorActor(
      * to avoid the situation when we create subfolder before it's parent was not committed yet.
      */
     private fun syncPhase1() {
+        log().info("sync folders structure")
         syncActorPhase1 = context.actorOf( Props.create(
             SyncActor::class.java, // sessionFolderArg
             sessionFolderArg,      // nOfRoutes
             1,                     // incomeLinesFilter
             { s: String -> s.contains("mk <folder>") }
-        ))
+        ), "sync-folders")
         syncActorPhase1.tell( SyncActor.Perform(), self() )
     }
 
@@ -54,13 +56,17 @@ class SyncCoordinatorActor(
      * Copy and delete files in multi-treads mode
      */
     private fun syncPhase2() {
+        if (phase2started) return
+        phase2started = true
+
         context().stop(syncActorPhase1)
+        log().info("sync files")
         syncActorPhase2 = context.actorOf( Props.create(
             SyncActor::class.java,
             sessionFolderArg, // sessionFolderArg
             copyThreads,      // nOfRoutes
             null              // incomeLinesFilter - no filter, because, on the phase 1, all commands "mk <folder>" waere done
-        ))
+        ), "sync-files")
         syncActorPhase2.tell( SyncActor.Perform(), self() )
     }
 

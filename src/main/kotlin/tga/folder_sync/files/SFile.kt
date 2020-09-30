@@ -1,5 +1,6 @@
 package tga.folder_sync.files
 
+import akka.event.LoggingAdapter
 import tga.folder_sync.tree.Tree
 
 /**
@@ -17,6 +18,9 @@ abstract class SFile : Comparable<SFile> {
     abstract val size: Long
 
     abstract fun relativeTo(base: SFile): String
+    abstract fun copyToIt(srcFile: LocalSFile, logger: LoggingAdapter)
+    abstract fun mkFolder()
+    abstract fun removeFile()
 
     /**
      * List of all files and folders ionside this one
@@ -69,9 +73,5 @@ abstract class SFile : Comparable<SFile> {
 
         return root
     }
-
-    abstract fun copyToIt(srcFile: LocalSFile)
-    abstract fun mkFolder()
-    abstract fun removeFile()
 
 }

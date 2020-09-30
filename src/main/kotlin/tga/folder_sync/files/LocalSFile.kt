@@ -1,5 +1,7 @@
 package tga.folder_sync.files
 
+import akka.event.LoggingAdapter
+import tga.folder_sync.exts.readableFileSize
 import java.io.File
 
 /**
@@ -29,8 +31,9 @@ class LocalSFile(val file: File) : SFile() {
         return rel.path.replace("\\", "/")
     }
 
-    override fun copyToIt(srcFile: LocalSFile) {
+    override fun copyToIt(srcFile: LocalSFile, logger: LoggingAdapter) {
         srcFile.file.copyTo(this.file)
+        logger.info("$path : 100% (${size.readableFileSize()}) ")
     }
 
     override fun mkFolder() {

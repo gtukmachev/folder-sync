@@ -1,7 +1,6 @@
 package tga.folder_sync.sync
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import akka.event.LoggingAdapter
 import tga.folder_sync.files.FoldersFactory
 import tga.folder_sync.files.LocalSFile
 import tga.folder_sync.files.SFile
@@ -18,11 +17,9 @@ abstract class SyncCmd(
     val fileName: String
 ) {
 
-    abstract fun doAction(): SyncCmd
+    abstract fun doAction(logger: LoggingAdapter): SyncCmd
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger("tga.folder_sync.sync.SyncCmd")
-
         fun makeCommand(commandLine: String, lineNumber: Int, srcRoot: String?, dstRoot: String?, incomeLinesFilter: inFilter? ): SyncCmd {
             if (commandLine.trim().startsWith("#")) return SkipCmd(lineNumber) //isComment
             if (incomeLinesFilter != null) {
@@ -59,11 +56,11 @@ abstract class SyncCmd(
 
     }
 
-    fun perform(): SyncCmd {
-        log.trace("${this::class.simpleName}.perform($lineNumber, $fileSize, $completed, $fileName")
+    fun perform(logger: LoggingAdapter): SyncCmd {
+        logger.debug("{}.perform(lineNumber={}, fileSize={}, fileName={})",this::class.simpleName, lineNumber, fileSize, fileName)
 
         val res = if (!completed) {
-            val r = doAction()
+            val r = doAction(logger)
             completed = true
             r
         } else {
@@ -74,6 +71,7 @@ abstract class SyncCmd(
     }
 
     override fun toString() = "${this::class.simpleName}(lineNumber=$lineNumber, fileName='$fileName', completed=$completed, fileSize=$fileSize)"
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is SyncCmd) return false
@@ -96,7 +94,8 @@ abstract class SyncCmd(
 }
 
 class MkDirCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
-    override fun doAction(): MkDirCmd {
+    override fun doAction(logger: LoggingAdapter): MkDirCmd {
+        logger.debug("MkDirCmd.doAction(lineNumber={}, fileSize={}, fileName={})", lineNumber, fileSize, fileName)
         val dstFile: SFile = FoldersFactory.create(fileName)
         dstFile.mkFolder()
         return this
@@ -104,8 +103,8 @@ class MkDirCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: Str
 }
 
 class DelCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
-    override fun doAction(): DelCmd {
-        log.trace("DelCmd.perform($lineNumber, $fileSize, $fileName")
+    override fun doAction(logger: LoggingAdapter): DelCmd {
+        logger.debug("DelCmd.doAction(lineNumber={}, fileSize={}, fileName={})", lineNumber, fileSize, fileName)
         val file: SFile = FoldersFactory.create(fileName)
         file.removeFile()
         return this
@@ -113,27 +112,27 @@ class DelCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: Strin
 }
 
 class CopyCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: String, val dstFileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
-    override fun doAction(): CopyCmd {
-        log.trace("CopyCmd.perform($lineNumber, $fileSize, $fileName, $dstFileName")
+    override fun doAction(logger: LoggingAdapter): CopyCmd {
+        logger.debug("CopyCmd.doAction(lineNumber={}, fileSize={}, fileName={}, dstFileName={})", lineNumber, fileSize, fileName, dstFileName)
         val srcFile: SFile = FoldersFactory.create(fileName)
         val dstFile: SFile = FoldersFactory.create(dstFileName)
 
-        dstFile.copyToIt(srcFile as LocalSFile)
+        dstFile.copyToIt(srcFile as LocalSFile, logger)
 
         return this
     }
 }
 
 class SkipCmd(lineNumber: Int) : SyncCmd(lineNumber, true, 0, "") {
-    override fun doAction(): SkipCmd {
-        log.trace("SkipCmd.perform($lineNumber")
+    override fun doAction(logger: LoggingAdapter): SkipCmd {
+        logger.debug("SkipCmd.doAction(lineNumber={})", lineNumber)
         return this
     }
 }
 
 class UnrecognizedCmd(lineNumber: Int, completed: Boolean, val reason: Throwable) : SyncCmd(lineNumber, completed, 0, "") {
-    override fun doAction(): UnrecognizedCmd {
-        log.trace("UnrecognizedCmd.perform($lineNumber")
+    override fun doAction(logger: LoggingAdapter): UnrecognizedCmd {
+        logger.debug("UnrecognizedCmd.doAction(lineNumber={})", lineNumber)
         return this
     }
 }

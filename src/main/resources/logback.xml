@@ -4,11 +4,17 @@
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <charset>UTF-8</charset>
             <outputPatternAsHeader>false</outputPatternAsHeader>
-            <pattern>%highlight(%-5level) %boldYellow(:) [%blue(%d{HH:mm:ss.SSS})] [%cyan(%thread)] %boldYellow(:) %msg%n</pattern>
+            <pattern>%highlight(%-5level) %boldYellow(:) %gray(%X{akkaTimestamp}) %boldYellow(:) %gray(%15.15X{akkaSource}:%2.2X{sourceThread}) %boldYellow(:) %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="info"><appender-ref ref="STDOUT"/></root>
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>8192</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="STDOUT" />
+    </appender>
+
+    <root level="info"><appender-ref ref="ASYNC"/></root>
     <logger name="tga" level="debug"/>
 
 </configuration>
