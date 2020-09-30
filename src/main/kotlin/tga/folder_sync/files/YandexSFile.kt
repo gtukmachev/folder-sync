@@ -161,27 +161,18 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         var readableTotalFileSize: String? = null
 
             override fun updateProgress(loaded: Long, total: Long) {
-            val nowMs = System.currentTimeMillis()
-            if (
-                ( total == 0L      ) ||
-                ( total == loaded  ) ||
-                ( nowMs - lastOutput > 2000 )
-            ) {
-                printStatus(loaded, total, nowMs)
-            }
-        }
-
-        private fun printStatus(loaded: Long, total: Long, nowMs: Long) {
-            if (loaded > 0) {
-                if (loaded == total) {
-                    logger.info("$path : 100% (${loaded.readableFileSize()}) ")
-                } else {
-                    if (readableTotalFileSize == null) readableTotalFileSize = total.readableFileSize()
-                    val percent: Double = if (total == 0L) 100.0 else loaded.toDouble() / total.toDouble() * 100.0
-                    logger.info("$path : ${percent.toInt()}% (${loaded.readableFileSize()} of $readableTotalFileSize) ")
+                val nowMs = System.currentTimeMillis()
+                when {
+                    (loaded == total           ) -> logger.info("$path : 100% (${loaded.readableFileSize()})")
+                    (nowMs - lastOutput < 5000 ) -> {}
+                    (loaded == 0L              ) -> {}
+                    else -> {
+                        if (readableTotalFileSize == null) readableTotalFileSize = total.readableFileSize()
+                        val percent: Double = if (total == 0L) 100.0 else loaded.toDouble() / total.toDouble() * 100.0
+                        logger.info("$path : ${percent.toInt()}% (${loaded.readableFileSize()} of $readableTotalFileSize) ")
+                        lastOutput = nowMs
+                    }
                 }
-            }
-            lastOutput = nowMs
         }
 
         override fun hasCancelled(): Boolean {
