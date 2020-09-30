@@ -28,7 +28,7 @@ class SyncActor(
     lateinit var planFile: File
     lateinit var planLines: Array<String>
     lateinit var reportActor: ActorRef
-    lateinit var statisticActor: ActorRef
+    lateinit var statisticCollectorActor: ActorRef
     lateinit var cmdActor: ActorRef
 
     var lineNumber = 0
@@ -41,8 +41,8 @@ class SyncActor(
     lateinit var listener: ActorRef
 
     override fun createReceive() = ReceiveBuilder()
-        .match(Perform::class.java           ) { listener = sender();                     raiseNextCommands(); checkIfDone() }
-        .match(ReportActor.Done::class.java  ) { commandsLaunchedNumber--; checkIfDone(); raiseNextCommands(); checkIfDone() }
+        .match(Perform::class.java                  ) { listener = sender();                     raiseNextCommands(); checkIfDone() }
+        .match(CmdActor.GiveMeNextTask::class.java  ) { commandsLaunchedNumber--; checkIfDone(); raiseNextCommands(); checkIfDone() }
         .build()
 
     private val strategy = OneForOneStrategy( 10, Duration.ofSeconds(60),
@@ -70,12 +70,12 @@ class SyncActor(
         planLines = planFile.readLines().toTypedArray()
         val (totalFiles, totalSize) = findExpectedStatisticWithinThePlan(planLines)
 
-        reportActor = context.actorOf( Props.create(ReportActor::class.java, planFile, planLines, self()), "reportActor" )
-        statisticActor = context.actorOf( Props.create(StatisticActor::class.java, totalFiles, totalSize), "statisticActor" )
+        reportActor = context.actorOf( Props.create(PlanUpdaterActor::class.java, planFile, planLines), "planUpdater" )
+        statisticCollectorActor = context.actorOf( Props.create(StatisticCollectorActor::class.java, totalFiles, totalSize), "statisticCollector" )
 
         cmdActor = context.actorOf(
                 SmallestMailboxPool(nOfRoutes).props(
-                    Props.create(CmdActor::class.java, reportActor, statisticActor)
+                    Props.create(CmdActor::class.java, self(), reportActor, statisticCollectorActor)
                 )
                 , "cmdRouter"
         )
@@ -120,7 +120,7 @@ class SyncActor(
     private fun checkIfDone() {
         log().debug("[checkIfDone] commandsLaunchedNumber=$commandsLaunchedNumber, lineNumber=$lineNumber, planLines.size=${planLines.size}")
         if (commandsLaunchedNumber == 0 && lineNumber >= planLines.size) {
-            reportActor.tell( ReportActor.Flush(), self() )
+            reportActor.tell( PlanUpdaterActor.Flush(), self() )
             listener.tell( Done("OK"), self() )
         }
     }

@@ -164,7 +164,7 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
                 val nowMs = System.currentTimeMillis()
                 when {
                     (loaded == total           ) -> logger.info("$path : 100% (${loaded.readableFileSize()})")
-                    (nowMs - lastOutput < 5000 ) -> {}
+                    (nowMs - lastOutput < 30_000 ) -> {}
                     (loaded == 0L              ) -> {}
                     else -> {
                         if (readableTotalFileSize == null) readableTotalFileSize = total.readableFileSize()

@@ -6,10 +6,12 @@ import akka.japi.pf.ReceiveBuilder
 import tga.folder_sync.exts.readableFileSize
 import tga.folder_sync.exts.sec
 
-class StatisticActor(
+class StatisticCollectorActor(
     totalFiles: Int,
     totalBytes: Long
 ) : AbstractLoggingActor() {
+
+    data class UpdateStatisitc(val cmd: SyncCmd, val err :Throwable?)
 
     private val finallyExpectedStatistic: Stat = Stat(
             files = totalFiles.takeIf{ it > 0  } ?: 1,
@@ -23,13 +25,13 @@ class StatisticActor(
     lateinit var printStatisticJob: Cancellable
 
     override fun createReceive(): Receive = ReceiveBuilder()
-        .match(ReportActor.Done::class.java){ updateStatAndProgress(it) }
-        .match(   PrintProgress::class.java){ logProgress()       }
+        .match(UpdateStatisitc::class.java){ updateStatAndProgress(it) }
+        .match(  PrintProgress::class.java){ logProgress()       }
         .build()
 
     override fun preStart() {
         printStatisticJob = context.system.scheduler.scheduleAtFixedRate(
-            4.sec(), 4.sec(), self(), PrintProgress(), context.dispatcher, self()
+            4.sec(), 20.sec(), self(), PrintProgress(), context.dispatcher, self()
         )
     }
 
@@ -37,7 +39,7 @@ class StatisticActor(
         printStatisticJob.cancel()
     }
 
-    private fun updateStatAndProgress(result: ReportActor.Done) {
+    private fun updateStatAndProgress(result: UpdateStatisitc) {
         val fileSize = result.cmd.fileSize.toLong()
 
         globalProgress.add(fileSize)

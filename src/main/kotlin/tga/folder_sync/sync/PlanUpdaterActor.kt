@@ -1,25 +1,24 @@
 package tga.folder_sync.sync
 
 import akka.actor.AbstractLoggingActor
-import akka.actor.ActorRef
 import akka.japi.pf.ReceiveBuilder
 import tga.folder_sync.exts.shortMsg
 import java.io.File
 
-class ReportActor(val planFile: File, val planLines: Array<String>, val resultListener: ActorRef) : AbstractLoggingActor() {
+class PlanUpdaterActor(val planFile: File, val planLines: Array<String>) : AbstractLoggingActor() {
 
     var linesNotPosted = 0
     var lastTimePosted = 0L
 
-    data class Done(val cmd: SyncCmd, val err: Throwable?)
+    data class UpdatePlanLine(val cmd: SyncCmd, val err: Throwable?)
     class Flush
 
     override fun createReceive(): Receive = ReceiveBuilder()
-        .match(Done::class.java){ report(it) }
+        .match(UpdatePlanLine::class.java){ report(it) }
         .match(Flush::class.java){ saveFile(System.currentTimeMillis()) }
         .build()
 
-    private fun report(result: Done) {
+    private fun report(result: UpdatePlanLine) {
         val LN = result.cmd.lineNumber - 1
 
         val result_ = when {
@@ -33,9 +32,9 @@ class ReportActor(val planFile: File, val planLines: Array<String>, val resultLi
         val now = System.currentTimeMillis()
         if (linesNotPosted >= 100 || now - lastTimePosted > 30_000) { //every 30 sec
             saveFile(now)
+            log().info("Plan file is updated with the current progress (every 30 sec)")
         }
 
-        resultListener.tell(result, self())
     }
 
     private fun saveFile(now: Long) {

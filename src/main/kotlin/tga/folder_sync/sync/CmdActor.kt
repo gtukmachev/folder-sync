@@ -5,6 +5,7 @@ import akka.actor.ActorRef
 import akka.japi.pf.ReceiveBuilder
 
 class CmdActor(
+    private val masterActor: ActorRef,
     private val reportActor: ActorRef,
     private val statisticActor: ActorRef
 ) : AbstractLoggingActor() {
@@ -25,18 +26,20 @@ class CmdActor(
                         val wasDone = cmd.completed
                         result = cmd.perform(log())
                         if (!wasDone && result.completed) {
-                            reportActor.tell( ReportActor.Done(result, err), self() )
+                            reportActor.tell( PlanUpdaterActor.UpdatePlanLine(result, err), self() )
                         }
                     } catch(e: Throwable) {
                         err = e
-                        reportActor.tell( ReportActor.Done(result, err), self() )
+                        reportActor.tell( PlanUpdaterActor.UpdatePlanLine(result, err), self() )
                     }
             }
         }
 
-
         log().debug(" <- {}", cmd)
-        statisticActor.tell( ReportActor.Done(result, err), self() )
+        statisticActor.tell( StatisticCollectorActor.UpdateStatisitc(result, err), self() )
+        masterActor.tell(GiveMeNextTask(), self())
     }
+
+    class GiveMeNextTask
 
 }
