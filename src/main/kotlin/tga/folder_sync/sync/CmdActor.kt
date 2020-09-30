@@ -4,7 +4,10 @@ import akka.actor.AbstractLoggingActor
 import akka.actor.ActorRef
 import akka.japi.pf.ReceiveBuilder
 
-class CmdActor(val reportActor: ActorRef) : AbstractLoggingActor() {
+class CmdActor(
+    private val reportActor: ActorRef,
+    private val statisticActor: ActorRef
+) : AbstractLoggingActor() {
 
     override fun createReceive(): Receive = ReceiveBuilder()
         .match(SyncCmd::class.java) { handleCommand(it) }
@@ -15,15 +18,25 @@ class CmdActor(val reportActor: ActorRef) : AbstractLoggingActor() {
         var result: SyncCmd = cmd
         var err: Throwable? = null
 
-        try {
-            // if ( cmd.lineNumber.rem( 2 ) == 0 ) throw RuntimeException("Test error")
-            result = cmd.perform(log())
-        } catch(e: Throwable) {
-            err = e
+        when (cmd) {
+            is UnrecognizedCmd -> err = cmd.reason
+            else -> {
+                    try {
+                        val wasDone = cmd.completed
+                        result = cmd.perform(log())
+                        if (!wasDone && result.completed) {
+                            reportActor.tell( ReportActor.Done(result, err), self() )
+                        }
+                    } catch(e: Throwable) {
+                        err = e
+                        reportActor.tell( ReportActor.Done(result, err), self() )
+                    }
+            }
         }
 
+
         log().debug(" <- {}", cmd)
-        reportActor.tell( ReportActor.Done(result, err), self() )
+        statisticActor.tell( ReportActor.Done(result, err), self() )
     }
 
 }

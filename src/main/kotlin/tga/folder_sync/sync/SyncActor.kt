@@ -28,6 +28,7 @@ class SyncActor(
     lateinit var planFile: File
     lateinit var planLines: Array<String>
     lateinit var reportActor: ActorRef
+    lateinit var statisticActor: ActorRef
     lateinit var cmdActor: ActorRef
 
     var lineNumber = 0
@@ -67,11 +68,14 @@ class SyncActor(
 
         planFile = File(sessionFolder.absolutePath + "/plan.txt")
         planLines = planFile.readLines().toTypedArray()
+        val (totalFiles, totalSize) = findExpectedStatisticWithinThePlan(planLines)
 
         reportActor = context.actorOf( Props.create(ReportActor::class.java, planFile, planLines, self()), "reportActor" )
+        statisticActor = context.actorOf( Props.create(StatisticActor::class.java, totalFiles, totalSize), "statisticActor" )
+
         cmdActor = context.actorOf(
                 SmallestMailboxPool(nOfRoutes).props(
-                    Props.create(CmdActor::class.java, reportActor)
+                    Props.create(CmdActor::class.java, reportActor, statisticActor)
                 )
                 , "cmdRouter"
         )
@@ -79,12 +83,30 @@ class SyncActor(
         lineNumber = 0
         srcRoot = null
         dstRoot = null
-//        commandsLounchedNumber = 0
         errCount = 0
     }
 
-    fun raiseNextCommands() {
-        val cmd = getNextCommand()
+    private fun findExpectedStatisticWithinThePlan(planLines: Array<String>): Pair<Int, Long> {
+        fun parse(prefix: String): Long {
+            val line: String = planLines.firstOrNull { it.startsWith(prefix) }
+                ?: throw RuntimeException("Cant find required line in the plan file: $prefix..." )
+
+            val nStr = line.substring(prefix.length)
+
+            return try { nStr.trim().replace(",","").toLong() }
+                catch (e: Throwable){
+                    throw RuntimeException("The number field in the line has wrong format (not recognized as an integer value): $line" )
+                }
+        }
+
+        val files = parse("#   total commands to run:").toInt()
+        val size  = parse("#        total bytes sync:")
+
+        return files to size
+    }
+
+    private fun raiseNextCommands() {
+        val cmd = readNextCommand()
         log().debug("[raiseNextCommands] commandsLaunchedNumber=$commandsLaunchedNumber, nOfRutees=$nOfRoutes  cmd=${cmd}")
 
         if (cmd != null) {
@@ -131,11 +153,6 @@ class SyncActor(
 
     }
 
-    private fun getNextCommand(): SyncCmd? {
-        var cmd = readNextCommand()
-        while ( (cmd != null) && (cmd is SkipCmd || cmd.completed) ) cmd = readNextCommand()
-        return cmd
-    }
 
     private fun readNextCommand(): SyncCmd? {
         if (lineNumber >= planLines.size) return null

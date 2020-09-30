@@ -31,7 +31,7 @@ class ReportActor(val planFile: File, val planLines: Array<String>, val resultLi
 
         linesNotPosted++
         val now = System.currentTimeMillis()
-        if (linesNotPosted >= 100 || now - lastTimePosted > 10_000) { //every 10 sec
+        if (linesNotPosted >= 100 || now - lastTimePosted > 30_000) { //every 30 sec
             saveFile(now)
         }
 
