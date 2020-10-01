@@ -26,12 +26,12 @@ abstract class AbstractWorkerActor<T>(
     private fun handleTaskWrapper(runCommand: Run<*>) {
         try {
             val task: T = runCommand.task as T
-            val result = handleTask(task)
-            masterActor.tell( Done(result), self )
+            handleTask(task)
+            masterActor.tell( Done(task), self )
         } catch (t: Throwable) {
             masterActor.tell( Err(runCommand.task, t), self )
         }
     }
 
-    abstract fun handleTask(task: T): T
+    abstract fun handleTask(task: T)
 }

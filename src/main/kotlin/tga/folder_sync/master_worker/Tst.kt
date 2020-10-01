@@ -75,14 +75,13 @@ class TstMaster(requester : ActorRef) : AbstractMasterActor<TstTask>(2, TstWorke
 }
 
 class TstWorker(masterActor: ActorRef) : AbstractWorkerActor<TstTask>(masterActor) {
-    override fun handleTask(task: TstTask): TstTask {
+    override fun handleTask(task: TstTask) {
         log().info("---> Handling $task ...")
             when {
                 (task.i % 3 == 0) -> throw RuntimeException("Wow!")
                 else              -> sleep( 5.sec() )
             }
         log().info("<--- Handling $task")
-        return task
     }
 }
 
