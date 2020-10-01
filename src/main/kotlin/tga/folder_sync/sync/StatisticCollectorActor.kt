@@ -76,11 +76,11 @@ class StatisticCollectorActor(
         }
 
         fun toLogStr(): String {
-            val prcFiles = "%.2f".format(this.progressFiles)
+            val prcFiles = "%.2f".format(this.progressFiles * 100.0)
             val currentFiles = "%,d".format(currentStat.files)
             val totalFiles = "%,d".format(expectedStat.files)
 
-            val prcBytes = "%.2f".format(this.progressBytes)
+            val prcBytes = "%.2f".format(this.progressBytes * 100.0)
             val currentBytes = currentStat.bytes.readableFileSize()
             val totalBytes = expectedStat.bytes.readableFileSize()
 

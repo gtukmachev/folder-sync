@@ -163,9 +163,9 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
             override fun updateProgress(loaded: Long, total: Long) {
                 val nowMs = System.currentTimeMillis()
                 when {
-                    (loaded == total           ) -> logger.info("$path : 100% (${loaded.readableFileSize()})")
+                    (loaded == total             ) -> logger.info("$path : 100% (${loaded.readableFileSize()})")
                     (nowMs - lastOutput < 30_000 ) -> {}
-                    (loaded == 0L              ) -> {}
+                    (loaded == 0L                ) -> {}
                     else -> {
                         if (readableTotalFileSize == null) readableTotalFileSize = total.readableFileSize()
                         val percent: Double = if (total == 0L) 100.0 else loaded.toDouble() / total.toDouble() * 100.0
