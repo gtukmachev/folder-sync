@@ -5,9 +5,12 @@ import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
+import tga.folder_sync.exts.actorOf
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.params.Parameters
-import tga.folder_sync.sync.SyncCoordinatorActor
+import tga.folder_sync.sync.SyncInitiatorActor
+import java.io.File
+import java.text.SimpleDateFormat
 import java.util.*
 
 fun main(vararg args: String) {
@@ -30,8 +33,8 @@ class MainActor : AbstractLoggingActor() {
         .match(Start::class.java                         ) { printHelp(); shutdownProgram() }
 
         // A command to finish the program (the job's done)
-        .match(InitActor.Done::class.java            ) { m -> printInitResults(m); shutdownProgram() }
-        .match(SyncCoordinatorActor.Done::class.java ) { m -> printSyncResults(m); shutdownProgram() }
+        .match(InitActor.Done::class.java          ) { m -> printInitResults(m); shutdownProgram() }
+        .match(SyncInitiatorActor.Done::class.java ) { shutdownProgram() }
 
         .build()
 
@@ -105,15 +108,21 @@ class MainActor : AbstractLoggingActor() {
     }
 
     fun sync() {
-        val copyThreads: Int = System.getProperty("copyThreads")?.toInt() ?: 3
+        val sessionFolder = getSession(params.sessionFolder)
+        val sessionPlanFile = File( sessionFolder.path + "/plan.txt" )
 
-        syncActor = context.actorOf( Props.create(SyncCoordinatorActor::class.java, params.sessionFolder, copyThreads) )
-        syncActor.tell( SyncCoordinatorActor.Go(self()) , self() )
+        log().info("The sesion plan file detected as: {}", sessionPlanFile)
+
+        syncActor = context.actorOf("sync"){
+            SyncInitiatorActor(
+                planFile = sessionPlanFile,
+                numberOfFileCopyWorkers = params.copyThreads,
+                requesterActor = self
+            )
+        }
+
     }
 
-    private fun printSyncResults(results: SyncCoordinatorActor.Done) {
-        println(results)
-    }
     private fun printInitResults(results: InitActor.Done) {
         println(results)
     }
@@ -122,8 +131,38 @@ class MainActor : AbstractLoggingActor() {
         context.system.terminate()
     }
 
+    private fun getSession(sessionArg: String?): File {
+        if (sessionArg != null) {
+            val folder = File(sessionArg)
+            if (!folder.exists() || !folder.isDirectory) {
+                throw SpecifiedSessionFolderNotFound(sessionArg)
+            }
+            return folder
+        }
+
+        val folderNamePattern = SimpleDateFormat("'.sync'-yyyy-MM-dd-HH-mm-ss")
+
+        val subFolders = File(".").listFiles{ f ->
+            if (!f.isDirectory) {
+                false
+            } else {
+                try {
+                    folderNamePattern.parse(f.name)
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+            }
+        }
+
+        return subFolders!!.maxBy { f -> folderNamePattern.parse(f.name) }!!
+
+    }
+
     data class Start(val params: Parameters)
 
 }
+
+class SpecifiedSessionFolderNotFound(sessionArg: String) : RuntimeException("provided 'plan folder' doesn't exist: \"$sessionArg\"")
 
 

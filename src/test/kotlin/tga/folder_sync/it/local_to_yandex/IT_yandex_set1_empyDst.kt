@@ -4,11 +4,12 @@ import akka.actor.ActorRef
 import akka.actor.Props
 import akka.testkit.javadsl.TestKit
 import org.junit.Test
+import tga.folder_sync.exts.actorOf
 import tga.folder_sync.exts.min
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.it.*
 import tga.folder_sync.params.Parameters
-import tga.folder_sync.sync.SyncCoordinatorActor
+import tga.folder_sync.sync.SyncInitiatorActor
 import java.io.File
 import java.util.*
 import kotlin.test.assertTrue
@@ -115,15 +116,15 @@ class IT_yandex_set1_empyDst : AbstractItTest() {
                     planLines.forEach( out::println )
                 }
 
-                val syncActor = system.actorOf(
-                    Props.create(
-                    SyncCoordinatorActor::class.java,
-                    initResult.outDir,
-                        3
-                ), "syncActor")
+                system.actorOf("sync") {
+                    SyncInitiatorActor(
+                        planFile = File("$initResult.outDir/plan.txt"),
+                        numberOfFileCopyWorkers = 3,
+                        requesterActor = ref
+                    )
+                }
 
-                syncActor.tell( SyncCoordinatorActor.Go(ref), ref )
-                expectMsgClass( testMaxDuration(), SyncCoordinatorActor.Done::class.java )
+                expectMsgClass( testMaxDuration(), SyncInitiatorActor.Done::class.java )
 
                 for (f in exclusions ) {
                     val folder = File("$localRootFolder/tests-set1/src/$f")

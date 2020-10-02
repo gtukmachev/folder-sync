@@ -2,14 +2,18 @@ package tga.folder_sync.sync
 
 import akka.actor.AbstractLoggingActor
 import akka.actor.ActorRef
-import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
+import tga.folder_sync.exts.actorOf
+import tga.folder_sync.master_worker.AllTasksDone
 import java.io.File
 
-class SyncInitiatorActorr(
+class SyncInitiatorActor(
     val planFile: File,
-    val numberOfWorkers: Int
+    val numberOfFileCopyWorkers: Int,
+    val requesterActor: ActorRef
 ) : AbstractLoggingActor() {
+
+    class Done
 
     lateinit var planLines: Array<String>
     lateinit var planUpdaterActor: ActorRef
@@ -20,16 +24,23 @@ class SyncInitiatorActorr(
              var totalFiles: Int = 0
              var totalSize: Long = 0L
 
+    lateinit var masterActor_Folders: ActorRef
+    lateinit var masterActor_Files: ActorRef
 
     override fun preStart() {
         super.preStart()
 
-        planUpdaterActor        = context.actorOf(Props.create())
-        statisticCollectorActor = context.actorOf(Props.create())
-
-
         loadPlanFile()
-        runMasterWorkerEnginePhase1()
+
+        planUpdaterActor = context.actorOf("planUpdater"){
+            PlanUpdaterActor( planFile.path, planLines)
+        }
+
+        statisticCollectorActor = context.actorOf("statistic"){
+            StatisticCollectorActor(totalFiles, totalSize)
+        }
+
+        runPhase1_Folders()
     }
 
     private fun loadPlanFile() {
@@ -67,28 +78,67 @@ class SyncInitiatorActorr(
         totalSize  =   findLongParameter("#        total bytes sync:")
     }
 
-    private fun runMasterWorkerEnginePhase1() {
-        val master = context.actorOf(Props.create(
-            SyncMasterActor::class.java,
-            1         , // numberOfWorkers: Int,
-            self      , // requesterActor: ActorRef,
-            planLines , // val planLines: Array<String>,
-            srcRoot   , // val srcRoot: String,
-            dstRoot   , // dstRoot: String,
-            totalFiles, // totalFiles: Int,
-            totalSize , // totalSize: Long,
-            { s: String -> s.contains("mk <folder>") }, // incomeLinesFilter: inFilter?,
-            planUpdaterActor        , // reportActor: ActorRef,
-            statisticCollectorActor  // statisticCollectorActor: ActorRef
-        ))
+    private fun runPhase1_Folders() {
+        context.become( phase1Behavior() )
+        masterActor_Folders = context.actorOf("master-folders") {
+            SyncMasterActor(
+                numberOfWorkers = 1,
+                requesterActor = self,
+                planLines = planLines,
+                srcRoot = srcRoot,
+                dstRoot = dstRoot,
+                totalFiles = totalFiles,
+                totalSize = totalSize,
+                incomeLinesFilter = { s: String -> s.contains("mk <folder>") },
+                reportActor = planUpdaterActor,
+                statisticCollectorActor = statisticCollectorActor
+            )
+        }
     }
 
-    override fun createReceive() = createReceivePhase1()
+    private fun runPhase2_Files() {
+        context.stop( masterActor_Folders )
+        context.become( phase2Behavior() )
+        masterActor_Files = context.actorOf("master-files") {
+            SyncMasterActor(
+                numberOfWorkers = numberOfFileCopyWorkers,
+                requesterActor = self,
+                planLines = planLines,
+                srcRoot = srcRoot,
+                dstRoot = dstRoot,
+                totalFiles = totalFiles,
+                totalSize = totalSize,
+                incomeLinesFilter = { s: String -> !s.contains("mk <folder>") },
+                reportActor = planUpdaterActor,
+                statisticCollectorActor = statisticCollectorActor
+            )
+        }
+    }
 
-    private fun createReceivePhase1(): Receive = ReceiveBuilder()
+    private fun stopWorking(){
+        context.stop( masterActor_Files )
+        context.stop( statisticCollectorActor )
+
+        context.become( ReceiveBuilder()
+            .match(PlanUpdaterActor.ReportUpdaterIsDone::class.java){
+                context.stop(planUpdaterActor)
+                requesterActor.tell( Done(), self )
+            }
+            .build() )
+        planUpdaterActor.tell(PlanUpdaterActor.Finish(), self)
+
+
+    }
+
+    override fun createReceive(): Receive = phase1Behavior()
+
+    private fun phase1Behavior(): Receive = ReceiveBuilder()
+        .match(AllTasksDone::class.java) { runPhase2_Files() }
         .build()
 
-    private fun createReceivePhase2(): Receive = ReceiveBuilder()
+
+    private fun phase2Behavior(): Receive = ReceiveBuilder()
+        .match(AllTasksDone::class.java) { stopWorking() }
         .build()
 
 }

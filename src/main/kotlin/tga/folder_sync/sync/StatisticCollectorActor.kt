@@ -37,6 +37,7 @@ class StatisticCollectorActor(
 
     override fun postStop() {
         printStatisticJob.cancel()
+        logProgress()
     }
 
     private fun updateStatAndProgress(result: UpdateStatisitc) {
