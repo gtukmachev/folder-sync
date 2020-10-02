@@ -6,7 +6,6 @@ import akka.actor.Props
 import akka.testkit.javadsl.TestKit
 import org.junit.After
 import org.junit.Before
-import org.junit.Test
 import tga.folder_sync.exts.actorOf
 import tga.folder_sync.init.InitActor
 import tga.folder_sync.params.Parameters
@@ -36,8 +35,7 @@ abstract class AbstractItTest {
         TestKit.shutdownActorSystem(system)
     }
 
-    @Test
-    fun testInitAndSync() {
+    open fun testInitAndSync() {
         object : TestKit(system){
             init {
                 // prepare test data

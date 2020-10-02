@@ -1,5 +1,6 @@
 package tga.folder_sync.it.local_to_local
 
+import org.junit.Test
 import tga.folder_sync.exts.sec
 import tga.folder_sync.it.AbstractItTest
 import tga.folder_sync.it.localFolderStructure
@@ -51,5 +52,11 @@ class IT_set2_empySrc : AbstractItTest() {
                |  del <folder> |                   2 | sub-4
                |  del <folder> |                   1 | sub-5
             """.trimIndent()
+
+    @Test
+    override fun testInitAndSync() {
+        super.testInitAndSync()
+    }
+
 
 }

@@ -53,7 +53,7 @@ class SyncInitiatorActor(
         }
 
         fun findStringParameter(linePrefix: String): String {
-            val line = planLines[findParameterLine(linePrefix)].substring( linePrefix.length )
+            val line = planLines[findParameterLine(linePrefix)]
             return line.substring(linePrefix.length).trim()
         }
 

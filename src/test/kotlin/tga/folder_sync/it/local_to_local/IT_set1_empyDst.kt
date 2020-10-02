@@ -75,6 +75,11 @@ class IT_set1_empyDst : AbstractItTest() {
             """.trimIndent()
 
     @Test
+    override fun testInitAndSync() {
+        super.testInitAndSync()
+    }
+
+    @Test
     fun testPartialSync() {
         object : TestKit(system){
 

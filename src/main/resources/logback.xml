@@ -14,7 +14,7 @@
         <appender-ref ref="STDOUT" />
     </appender>
 
-    <root level="debug"><appender-ref ref="ASYNC"/></root>
+    <root level="info"><appender-ref ref="ASYNC"/></root>
     <logger name="tga" level="debug"/>
 
 </configuration>
