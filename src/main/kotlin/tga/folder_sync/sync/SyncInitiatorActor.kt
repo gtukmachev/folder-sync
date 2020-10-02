@@ -53,22 +53,25 @@ class SyncInitiatorActor(
         }
 
         fun findStringParameter(linePrefix: String): String {
-            val line = planLines[findParameterLine(linePrefix)]
+            val line = planLines[findParameterLine(linePrefix)].substring( linePrefix.length )
             return line.substring(linePrefix.length).trim()
         }
 
         fun findLongParameter(linePrefix: String): Long {
             val lineIndex = findParameterLine(linePrefix)
-            val line = planLines[lineIndex]
+            val line = planLines[lineIndex].substring( linePrefix.length )
             return try {
-                line
+                line.trim()
                     .replace(",","")
                     .replace(".","")
                     .replace("'","")
                     .replace("`","")
                     .toLong()
             }  catch (e : Exception) {
-                throw PlanFileFormatException(lineIndex + 1, "The number field in the line has wrong format (not recognized as an integer value): $line")
+                throw PlanFileFormatException(
+                    lineIndex + 1,
+                    "The number field in the line has wrong format (not recognized as an integer value): ${planLines[lineIndex]}"
+                )
             }
         }
 

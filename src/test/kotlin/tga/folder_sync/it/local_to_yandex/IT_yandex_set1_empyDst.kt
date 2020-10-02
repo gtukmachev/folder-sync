@@ -118,7 +118,7 @@ class IT_yandex_set1_empyDst : AbstractItTest() {
 
                 system.actorOf("sync") {
                     SyncInitiatorActor(
-                        planFile = File("$initResult.outDir/plan.txt"),
+                        planFile = File("${initResult.outDir}/plan.txt"),
                         numberOfFileCopyWorkers = 3,
                         requesterActor = ref
                     )
