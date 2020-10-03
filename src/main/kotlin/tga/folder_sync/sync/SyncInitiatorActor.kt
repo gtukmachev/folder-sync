@@ -36,7 +36,7 @@ class SyncInitiatorActor(
         loadPlanFile()
 
         planUpdaterActor = context.actorOf("plan"){
-            PlanUpdaterActor( planFile.path, planLines)
+            PlanUpdaterActor( self, planFile.path )
         }
 
         statisticCollectorActor = context.actorOf("stat"){
@@ -111,7 +111,7 @@ class SyncInitiatorActor(
     }
 
     private fun runPhase2_Files() {
-        log().info("Starting of the third phase - deletion of files on the target side, which are gone from the original location")
+        log().info("Starting of the second phase - copying of files to the destination.")
         context.stop( masterActor_Folders )
         context.become( phase2Behavior() )
         masterActor_Files = context.actorOf("master-files") {
@@ -126,7 +126,7 @@ class SyncInitiatorActor(
     }
 
     private fun runPhase3_Files() {
-        log().info("Starting of the second phase - copying of files to the destination.")
+        log().info("Starting of the third phase - deletion of files on the target side, which are gone from the original location")
         context.stop( masterActor_Files )
         context.become( phase3Behavior() )
         masterActor_Del = context.actorOf("master-del") {
@@ -147,9 +147,9 @@ class SyncInitiatorActor(
 
         log().info("Updating of the plan file with the final status")
         context.become( ReceiveBuilder()
-            .match(PlanUpdaterActor.ReportUpdaterIsDone::class.java){
+            .match(PlanUpdaterActor.LastSaveResultsMessage::class.java) { lastSaveResults ->
                 context.stop(planUpdaterActor)
-                log().info("The plan file is finally updated.")
+                log().info("The plan file is finally updated with the results: $lastSaveResults")
                 requesterActor.tell( Done(), self )
             }
             .build() )
