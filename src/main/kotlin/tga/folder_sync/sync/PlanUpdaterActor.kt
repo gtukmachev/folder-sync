@@ -53,7 +53,7 @@ class PlanUpdaterActor(
     private fun saveFile(now: Long) {
         if (linesNotPosted == 0) return
 
-        planFile.printWriter().use {out -> planLines.forEach(out::println)}
+        //planFile.printWriter().use {out -> planLines.forEach(out::println)}
         log().info("Plan file is updated with the current progress")
         linesNotPosted = 0
         lastTimePosted = now

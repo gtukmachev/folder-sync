@@ -7,9 +7,9 @@ import akka.japi.pf.ReceiveBuilder
 import kotlin.reflect.KClass
 
 abstract class AbstractMasterActor<T>(
-    var numberOfWorkers: Int,
-    var workerActorClass: KClass<out AbstractWorkerActor<out T>>,
-    var requesterActor: ActorRef
+    val numberOfWorkers: Int,
+    val workerActorClass: KClass<out AbstractWorkerActor<out T>>,
+    val requesterActor: ActorRef
 ) : AbstractLoggingActor() {
 
     abstract fun nextTask(): T?

@@ -34,8 +34,7 @@ class MainActor : AbstractLoggingActor() {
 
         // A command to finish the program (the job's done)
         .match(InitActor.Done::class.java          ) { m -> printInitResults(m); shutdownProgram() }
-        .match(SyncInitiatorActor.Done::class.java ) { shutdownProgram() }
-
+        .match(SyncInitiatorActor.Done::class.java ) { log().info("The `sync` command is completed"); shutdownProgram() }
         .build()
 
     private fun isInitCommand(m: Start) = m.params.command == Parameters.Command.`init`

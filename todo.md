@@ -1,4 +1,10 @@
 ## major
+- `plaun update algorithm`
+    - do not store all the lines in memory at all in the Actor
+    - read original file
+    - change lines that should be changed -> to a copy with another name
+    - if ok - replace the old file with the new one
+    - read + write - will be (slowly) than just write -> move it to another actor  
 
 - `shutdown hook`: to do not break "plan file". 
   if a user press <Ctrl+C> duting the "plan file" updating process - the writing process do not finis.

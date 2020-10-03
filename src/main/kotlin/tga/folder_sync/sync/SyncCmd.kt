@@ -19,7 +19,8 @@ abstract class SyncCmd(
     companion object {
         fun makeCommand(commandLine: String, lineNumber: Int, srcRoot: String?, dstRoot: String?): SyncCmd {
             try {
-                if (commandLine.trim().startsWith("#")) return SkipCmd(lineNumber) //isComment
+                val trimmed = commandLine.trim()
+                if (trimmed.startsWith("#") || trimmed.isBlank() ) return SkipCmd(lineNumber) //isComment
 
                 val lexems = commandLine.split("|").map { it.trim() }
 

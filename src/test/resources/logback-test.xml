@@ -4,7 +4,7 @@
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <charset>UTF-8</charset>
             <outputPatternAsHeader>false</outputPatternAsHeader>
-            <pattern>%highlight(%-5level) %boldYellow(:) %gray(%X{akkaTimestamp}) %boldYellow(:) %gray(%25.25X{akkaSource}:%2.2X{sourceThread}) %boldYellow(:) %msg%n</pattern>
+            <pattern>> %highlight(%-5level) %boldYellow(:) %gray(%X{akkaTimestamp}) %boldYellow(:) %gray(%25.25X{akkaSource}:%2.2X{sourceThread}) %boldYellow(:) %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -15,5 +15,7 @@
     </appender>
 
     <root level="info"><appender-ref ref="ASYNC"/></root>
+    <logger name="tga" level="info"/>
+    <logger name="tga.folder_sync.sync.SyncMasterActor" level="debug"/>
 
 </configuration>
