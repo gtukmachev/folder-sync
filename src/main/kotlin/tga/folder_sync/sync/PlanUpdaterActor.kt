@@ -16,22 +16,22 @@ class PlanUpdaterActor(
 
     // External API:
     data class UpdatePlanLine(val cmd: SyncCmd, val err: Throwable?) // a request about updating of a line in the 'plan file'
-    class Finish    // a request for 'flushing' all the possible buffers to the 'plan file' and finishing
+    data class Finish(val id: Int = 0)    // a request for 'flushing' all the possible buffers to the 'plan file' and finishing
     // a response to this actor ownr about
 
 
     private val saveEvery = 1.min()         // update the plan file every 'this' time by a scheduled job
     private val saveNotOftenThan = 55.sec() // but not often than 'that' time period  (becoise, the saving can be forced between tasks)
-    class SaveFile // class for an internal message for initiating of a periodical file saving
     lateinit var periodicalPlanFileSaveJob: Cancellable // the 'periodical saving' job - sends the SaveFile() message to this actor every 'saveEvery' time period
     private var lastSaveTimestamp = 0L // when a last successful file saving was
+    data class SaveFile(val id: Int = 0) // class for an internal message for initiating of a periodical file saving
 
     private val maxCapacity = 100 // how many lines we will save to a buffer before updating the file
     private var tasks: MutableList<UpdatePlanLine> = ArrayList(maxCapacity) // the lines buffer
 
-    open class LastSaveResultsMessage
-    class LastSaveSuccess : LastSaveResultsMessage()
-    class LastSaveTimeout : LastSaveResultsMessage()
+    abstract class LastSaveResultsMessage
+    data class LastSaveSuccess(val id: Int = 0) : LastSaveResultsMessage()
+    data class LastSaveTimeout(val id: Int = 0) : LastSaveResultsMessage()
 
     lateinit var saver: ActorRef
     private var currentSaveRequestId = 0L

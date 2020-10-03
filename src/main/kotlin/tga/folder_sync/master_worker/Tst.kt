@@ -53,7 +53,7 @@ class TstMainActor : AbstractLoggingActor() {
 
 data class TstTask(val i: Int)
 
-class TstMaster(requester : ActorRef) : AbstractMasterActor<TstTask>(2, TstWorker::class, requester) {
+class TstMaster(requester : ActorRef) : AbstractMasterActor<TstTask>(2, TstWorker::class, requester, null) {
 
     val tasks = Array(10, {it + 1})
         .map { TstTask(it) }

@@ -8,7 +8,7 @@ abstract class AbstractSequienceMasterActor<T>(
     workerActorClass: KClass<out AbstractWorkerActor<out T>>,
     requesterActor: ActorRef,
     tasksSequence: Sequence<T>
-) : AbstractMasterActor<T> (numberOfWorkers, workerActorClass, requesterActor){
+) : AbstractMasterActor<T> (numberOfWorkers, workerActorClass, requesterActor, "worker"){
 
     private val tasksIterator = tasksSequence.iterator()
 

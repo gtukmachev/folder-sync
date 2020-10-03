@@ -9,7 +9,8 @@ import kotlin.reflect.KClass
 abstract class AbstractMasterActor<T>(
     val numberOfWorkers: Int,
     val workerActorClass: KClass<out AbstractWorkerActor<out T>>,
-    val requesterActor: ActorRef
+    val requesterActor: ActorRef,
+    val workerName: String?
 ) : AbstractLoggingActor() {
 
     abstract fun nextTask(): T?
@@ -20,8 +21,9 @@ abstract class AbstractMasterActor<T>(
     private val activeWorkers = HashSet<ActorRef>( numberOfWorkers )
 
     override fun preStart() {
+        val wn = workerName ?: workerActorClass.simpleName
         for (i in 1..numberOfWorkers)
-            context.actorOf( Props.create(workerActorClass.java, self()), "${workerActorClass.simpleName}-$i")
+            context.actorOf( Props.create(workerActorClass.java, self()), "$wn-$i")
         log().debug("$numberOfWorkers workers ({}) were launched", workerActorClass.simpleName)
     }
 
