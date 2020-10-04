@@ -1,10 +1,12 @@
 ## major
-- `plaun update algorithm`
-    - do not store all the lines in memory at all in the Actor
-    - read original file
-    - change lines that should be changed -> to a copy with another name
-    - if ok - replace the old file with the new one
-    - read + write - will be (slowly) than just write -> move it to another actor  
+- `errors log': log all errors to a separate file
+	-  workers should log().error(...) adetailed information in case of errors:
+		- the current task - to see `file name` 
+		- stack-trace 
+
+- `online statistic`: 
+	- now we change statistic on a 'file' level, so we have to wait until the full file well be uploaded to see the chage in statistic.
+    - implement the statistic updating (amount of bytes only) in an online manner
 
 - `shutdown hook`: to do not break "plan file". 
   if a user press <Ctrl+C> duting the "plan file" updating process - the writing process do not finis.
@@ -39,3 +41,12 @@
 - `service mode`: to run the program as service
 - `UI`: Add a UI for watching the sync process not in logs only
     - configure
+
+
+## done
+- `plaun update algorithm`
+    - do not store all the lines in memory at all in the Actor
+    - read original file
+    - change lines that should be changed -> to a copy with another name
+    - if ok - replace the old file with the new one
+    - read + write - will be (slowly) than just write -> move it to another actor  

@@ -29,6 +29,7 @@ abstract class AbstractWorkerActor<T>(
             handleTask(task)
             masterActor.tell( Done(task), self )
         } catch (t: Throwable) {
+            log().error(t, "Can't complete the task:\n{}\n. Reason:", runCommand)
             masterActor.tell( Err(runCommand.task, t), self )
         }
     }
