@@ -10,7 +10,9 @@ import com.yandex.disk.rest.ResourcesArgs
 import com.yandex.disk.rest.RestClient
 import com.yandex.disk.rest.exceptions.http.HttpCodeException
 import com.yandex.disk.rest.json.Resource
+import tga.folder_sync.exts.min
 import tga.folder_sync.exts.readableFileSize
+import tga.folder_sync.exts.sec
 import java.util.concurrent.TimeUnit
 
 /**
@@ -72,9 +74,9 @@ class YandexSFile(val yandexFile: Resource) : SFile() {
         fun get(path: String) = YandexSFile(loadFromYandex(path))
 
         fun makeClient(): OkHttpClient {
-            val CONNECT_TIMEOUT_MILLIS = 10 * 1000L
-            val READ_TIMEOUT_MILLIS = 300 * 1000L
-            val WRITE_TIMEOUT_MILLIS = 300 * 1000L
+            val CONNECT_TIMEOUT_MILLIS = 30.sec().toMillis()
+            val    READ_TIMEOUT_MILLIS = 15.min().toMillis()
+            val   WRITE_TIMEOUT_MILLIS = 15.min().toMillis()
 
             val client = OkHttpClient()
 
