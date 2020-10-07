@@ -1,6 +1,14 @@
 ## major
+- `tree worker/master pattern`
+	- implement the new pattern of Master/Worker approach:
+		- use "tree" of tasks instead of lenear Sequence
+		- run "children" tasks in parallel, but only after "parent" one is done
+		- do not run "children" at all in case of "parent" crash
+	- use this new pattern for the Fitst Phase - creating of all directories before files copying.
+	- Note: looks like "fork-join" case - check if it make sence to use "frok-join-dispatcher" for such kind of master-worker actors
+
 - `online statistic`: 
-	- now we change statistic on a 'file' level, so we have to wait until the full file well be uploaded to see the chage in statistic.
+	- now we change statistic on a 'file' level, so we have to wait until the full file well be uploaded to see it's effect in the statistic.
     - implement the statistic updating (amount of bytes only) in an online manner
 
 - `Smart comparing`: comparing files using not "names" only, but involve 

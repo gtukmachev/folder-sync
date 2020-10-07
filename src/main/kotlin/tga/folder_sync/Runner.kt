@@ -97,12 +97,8 @@ class MainActor : AbstractLoggingActor() {
         """.trimIndent())
     }
 
-    fun init() {
-        val initActor = context.actorOf( Props.create (
-            InitActor::class.java,
-                Date(),
-                params
-        ), "initActor")
+    private fun init() {
+        val initActor = context.actorOf("initActor"){ InitActor(Date(), params) }
         initActor.tell(InitActor.Perform(self()), self())
     }
 
@@ -110,7 +106,7 @@ class MainActor : AbstractLoggingActor() {
         val sessionFolder = getSession(params.sessionFolder)
         val sessionPlanFile = File( sessionFolder.path + "/plan.txt" )
 
-        log().info("The sesion plan file detected as: {}", sessionPlanFile)
+        log().info("The session plan file detected as: {}", sessionPlanFile)
 
         syncActor = context.actorOf("sync"){
             SyncInitiatorActor(

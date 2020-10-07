@@ -1,6 +1,5 @@
 package tga.folder_sync.it.local_to_yandex
 
-import org.junit.Ignore
 import org.junit.Test
 import tga.folder_sync.exts.min
 import tga.folder_sync.it.AbstractItTest
@@ -55,7 +54,7 @@ class IT_yandex_set2_empySrc : AbstractItTest() {
                |  del <folder> |                   1 | sub-5
             """.trimIndent()
 
-    @Test @Ignore
+    @Test
     override fun testInitAndSync() {
         super.testInitAndSync()
     }

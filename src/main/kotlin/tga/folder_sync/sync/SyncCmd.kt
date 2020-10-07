@@ -10,7 +10,7 @@ typealias inFilter = (String) -> Boolean
 abstract class SyncCmd(
     val lineNumber: Int,
     var completed: Boolean,
-    val fileSize: Int,
+    val fileSize: Long,
     val fileName: String
 ) {
 
@@ -27,8 +27,8 @@ abstract class SyncCmd(
                 val wasCompleted = lexems[0] == "+"
 
                 val commandLexem = lexems[1]
-                val size: Int = try {
-                    lexems[2].replace(".", "").replace(",", "").toInt()
+                val size: Long = try {
+                    lexems[2].replace(".", "").replace(",", "").toLong()
                 } catch (ex: Exception) {
                     return UnrecognizedCmd(lineNumber, wasCompleted,
                         RuntimeException(
@@ -43,7 +43,17 @@ abstract class SyncCmd(
                      "del <folder>" ->   DelCmd(lineNumber, wasCompleted, size, dstRoot + '/' + lexems[3])
                      "del < file >" ->   DelCmd(lineNumber, wasCompleted, size, dstRoot + '/' + lexems[3])
                     "copy < file >" ->  CopyCmd(lineNumber, wasCompleted, size, srcRoot + '/' + lexems[3], dstRoot + '/' + lexems[3])
-                    else -> SkipCmd(lineNumber)
+                               else -> UnrecognizedCmd(lineNumber, wasCompleted, RuntimeException(
+                                    """
+                                    | Error of parsing income file, in the line #$lineNumber. 
+                                    | The first field (command) is unrecognized!
+                                    | Only the following commands are supported:
+                                    |    "mk <folder>"
+                                    |    "del <folder>"
+                                    |    "del < file >"
+                                    |    "copy < file >"
+                                    """.trimIndent())
+                               )
                 }
                 return cmdObj
             } catch (t: Throwable) {
@@ -69,17 +79,18 @@ abstract class SyncCmd(
 
         return true
     }
+
     override fun hashCode(): Int {
         var result = lineNumber
         result = 31 * result + completed.hashCode()
-        result = 31 * result + fileSize
+        result = 31 * result + fileSize.hashCode()
         result = 31 * result + fileName.hashCode()
         return result
     }
 
 }
 
-class MkDirCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
+class MkDirCmd(lineNumber: Int, completed: Boolean, fileSize: Long, fileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
     override fun doAction(logger: LoggingAdapter) {
         logger.debug("MkDirCmd.doAction(lineNumber={}, fileSize={}, fileName={})", lineNumber, fileSize, fileName)
         val dstFile: SFile = FoldersFactory.create(fileName)
@@ -87,7 +98,7 @@ class MkDirCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: Str
     }
 }
 
-class DelCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
+class DelCmd(lineNumber: Int, completed: Boolean, fileSize: Long, fileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
     override fun doAction(logger: LoggingAdapter) {
         logger.debug("DelCmd.doAction(lineNumber={}, fileSize={}, fileName={})", lineNumber, fileSize, fileName)
         val file: SFile = FoldersFactory.create(fileName)
@@ -95,7 +106,7 @@ class DelCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: Strin
     }
 }
 
-class CopyCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: String, val dstFileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
+class CopyCmd(lineNumber: Int, completed: Boolean, fileSize: Long, fileName: String, val dstFileName: String) : SyncCmd(lineNumber, completed, fileSize, fileName) {
     override fun doAction(logger: LoggingAdapter) {
         logger.debug("CopyCmd.doAction(lineNumber={}, fileSize={}, fileName={}, dstFileName={})", lineNumber, fileSize, fileName, dstFileName)
         val srcFile: SFile = FoldersFactory.create(fileName)
@@ -105,13 +116,13 @@ class CopyCmd(lineNumber: Int, completed: Boolean, fileSize: Int, fileName: Stri
     }
 }
 
-class SkipCmd(lineNumber: Int) : SyncCmd(lineNumber, true, 0, "") {
+class SkipCmd(lineNumber: Int) : SyncCmd(lineNumber, true, 0L, "") {
     override fun doAction(logger: LoggingAdapter)  {
         logger.debug("SkipCmd.doAction(lineNumber={})", lineNumber)
     }
 }
 
-class UnrecognizedCmd(lineNumber: Int, completed: Boolean, val reason: Throwable) : SyncCmd(lineNumber, completed, 0, "") {
+class UnrecognizedCmd(lineNumber: Int, completed: Boolean, val reason: Throwable) : SyncCmd(lineNumber, completed, 0L, "") {
     override fun doAction(logger: LoggingAdapter){
         logger.debug("UnrecognizedCmd.doAction(lineNumber={})", lineNumber)
     }

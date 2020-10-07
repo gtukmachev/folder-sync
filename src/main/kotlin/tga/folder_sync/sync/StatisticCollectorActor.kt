@@ -41,12 +41,12 @@ class StatisticCollectorActor(
     }
 
     private fun updateStatAndProgress(result: UpdateStatisitc) {
-        val fileSize = result.cmd.fileSize.toLong()
+        val fileSize = result.cmd.fileSize
 
         globalProgress.add(fileSize)
 
-        when (result.err) {
-            null -> successProgress.add(fileSize)
+        when (result.err == null && result.cmd !is UnrecognizedCmd) {
+            true -> successProgress.add(fileSize)
             else -> errorProgress.add(fileSize)
         }
     }

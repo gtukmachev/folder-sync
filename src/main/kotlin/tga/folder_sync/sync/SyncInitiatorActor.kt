@@ -16,7 +16,7 @@ class SyncInitiatorActor(
 
     class Done
 
-    lateinit var planLines: Array<String>
+    //lateinit var planLines: Array<String>
     lateinit var commandsSequence: Sequence<SyncCmd>
     lateinit var planUpdaterActor: ActorRef
     lateinit var statisticCollectorActor: ActorRef
@@ -48,7 +48,7 @@ class SyncInitiatorActor(
 
     private fun loadPlanFile() {
         log().info("Loading synchronization plan file: {}", planFile.path)
-        planLines = planFile.readLines().toTypedArray()
+        val planLines = planFile.readLines()
 
         fun findParameterLine(linePrefix: String): Int {
             val i = planLines.indexOfFirst { it.startsWith(linePrefix) }
@@ -87,7 +87,7 @@ class SyncInitiatorActor(
         log().info("""The sync plan is the following:
             |   srcRoot    = $srcRoot
             |   dstRoot    = $dstRoot
-            |   totalFiles = ${totalFiles.readableFileSize()}
+            |   totalFiles = ${"%,d".format(totalFiles)}
             |   totalSize  = ${totalSize.readableFileSize()}
         """.trimMargin())
 
