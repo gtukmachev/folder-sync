@@ -3,6 +3,7 @@ package tga.folder_sync.it.local_to_yandex
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.testkit.javadsl.TestKit
+import org.junit.Ignore
 import org.junit.Test
 import tga.folder_sync.exts.actorOf
 import tga.folder_sync.exts.min
@@ -71,12 +72,12 @@ class IT_yandex_set1_empyDst : AbstractItTest() {
                |   mk <folder> |                   1 | sub-5
             """.trimIndent()
 
-    @Test
+    @Test @Ignore
     override fun testInitAndSync() {
         super.testInitAndSync()
     }
 
-    @Test
+    @Test @Ignore
     fun testPartialSync() {
         object : TestKit(system){
 

@@ -1,25 +1,27 @@
 package tga.folder_sync.exts
 
-import akka.actor.*
+import akka.actor.Actor
+import akka.actor.ActorRef
+import akka.actor.ActorRefFactory
+import akka.actor.Props
 import akka.japi.Creator
-
-val Resume = SupervisorStrategy.resume() as SupervisorStrategy.Directive
+import akka.japi.pf.ReceiveBuilder
+import kotlin.reflect.KClass
 
 fun <T : Actor> ActorRefFactory.actorOf( actorName: String, actorCreator: () -> T): ActorRef {
 
-    val creator = LambdaCreator<T>(actorCreator)
+    val creator = LambdaCreator(actorCreator)
 
     return this.actorOf(Props.create( creator ), actorName)
 }
 
-class LambdaCreator<T>(val actorCreator: () -> T) : Creator<T> {
+class LambdaCreator<T>(private val actorCreator: () -> T) : Creator<T> {
     override fun create(): T {
         return actorCreator.invoke()
     }
 }
 
-/*
-fun <T : Actor> ActorSystem.actorOf( actorName: String, actorCreator: () -> T): ActorRef
-        = this.actorOf(Props.create( actorCreator ), actorName)
-*/
 
+fun <P : Any> ReceiveBuilder.on(clazz: KClass<P>, apply: (P) -> Unit): ReceiveBuilder {
+    return this.match(clazz.java, apply)
+}

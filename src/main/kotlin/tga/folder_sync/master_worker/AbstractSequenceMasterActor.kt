@@ -3,7 +3,7 @@ package tga.folder_sync.master_worker
 import akka.actor.ActorRef
 import kotlin.reflect.KClass
 
-abstract class AbstractSequienceMasterActor<T>(
+abstract class AbstractSequenceMasterActor<T>(
     numberOfWorkers: Int,
     workerActorClass: KClass<out AbstractWorkerActor<out T>>,
     requesterActor: ActorRef,

@@ -4,13 +4,16 @@ import akka.actor.AbstractLoggingActor
 import akka.actor.ActorRef
 import akka.actor.Props
 import akka.japi.pf.ReceiveBuilder
+import tga.folder_sync.exts.on
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.reflect.KClass
 
 abstract class AbstractMasterActor<T>(
     val numberOfWorkers: Int,
     val workerActorClass: KClass<out AbstractWorkerActor<out T>>,
     val requesterActor: ActorRef,
-    val workerName: String?
+    private val workerName: String? = null
 ) : AbstractLoggingActor() {
 
     abstract fun nextTask(): T?
@@ -18,46 +21,48 @@ abstract class AbstractMasterActor<T>(
     abstract fun onTaskErr(task: T, err: Throwable)
 
     private var theJobIsDone = false
-    private val activeWorkers = HashSet<ActorRef>( numberOfWorkers )
+    private val activeWorkers = ArrayList<ActorRef>( numberOfWorkers )
+    private val idleWorkers: Queue<ActorRef> = LinkedList<ActorRef>( )
 
     override fun preStart() {
-        val wn = workerName ?: workerActorClass.simpleName
+        val workerActorName = workerName ?: workerActorClass.simpleName
         for (i in 1..numberOfWorkers)
-            context.actorOf( Props.create(workerActorClass.java, self()), "$wn-$i")
+            context.actorOf( Props.create(workerActorClass.java, self()), "$workerActorName-$i")
         log().debug("$numberOfWorkers workers ({}) were launched", workerActorClass.simpleName)
     }
 
     override fun createReceive(): Receive = ReceiveBuilder()
-        .match(AbstractWorkerActor.Ready::class.java   ) {
+        .on(AbstractWorkerActor.Ready::class){
             if (log().isDebugEnabled) log().debug("The worker '{}' reported about his readiness", sender.path().name())
-            sendTaskToWorker(sender)
+            idleWorkers += sender
+            sendTaskToAWorker()
         }
-        .match(AbstractWorkerActor.Response::class.java) {
+        .on(AbstractWorkerActor.Response::class) {
             if (log().isDebugEnabled) log().debug("The worker '{}' reported about his task completing", sender.path().name())
             handleWorkerResponse(sender, it)
-            sendTaskToWorker(sender)
+            sendTaskToAWorker()
         }
         .build()
 
     private fun handleWorkerResponse(worker: ActorRef, response: AbstractWorkerActor.Response<*>) {
         activeWorkers -= worker
+        idleWorkers += worker
         when(response) {
             is AbstractWorkerActor.Done -> { log().debug("Task is   done: {}", response); onTaskDone(response.task as T)               }
             is AbstractWorkerActor.Err  -> { log().debug("Task is FAILED: {}", response); onTaskErr (response.task as T, response.err) }
         }
     }
 
-    private fun sendTaskToWorker(worker: ActorRef) {
-        when (val task = nextTask()) {
-            null -> {
-                log().debug("Stopping worker `{}` is stopped", worker.path().name())
-                context.stop(worker)
-                checkIfAllTasksAreDone()
-            }
-            else -> {
-                log().debug("Sending task '{}' to worker `{}`", task, worker.path().name())
-                activeWorkers += worker
-                worker.tell(AbstractWorkerActor.Run(task), self)
+    private fun sendTaskToAWorker() {
+        while (idleWorkers.isNotEmpty()) {
+            when (val task = nextTask()) {
+                null -> { checkIfAllTasksAreDone(); sendTaskToAWorker@return }
+                else -> {
+                    val nextWorker = idleWorkers.remove()
+                    log().debug("Sending task '{}' to worker `{}`", task, nextWorker.path().name())
+                    activeWorkers += nextWorker
+                    nextWorker.tell(AbstractWorkerActor.Run(task), self)
+                }
             }
         }
     }
@@ -76,6 +81,7 @@ abstract class AbstractMasterActor<T>(
             }
         }
     }
+
 }
 
 data class AllTasksDone(val msg: String)
